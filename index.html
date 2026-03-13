@@ -452,31 +452,97 @@ if (!players.length) { addPlayer(); addPlayer(); } else renderPlayers();
 syncStyleChips();
 
 // ── Spotify OAuth ────────────────────────────
-function connectSpotify() {
+// ── PKCE helpers ────────────────────────────
+function generateRandomString(length) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const arr = new Uint8Array(length);
+  crypto.getRandomValues(arr);
+  return Array.from(arr).map(b => chars[b % chars.length]).join('');
+}
+
+async function generateCodeChallenge(verifier) {
+  const data = new TextEncoder().encode(verifier);
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  return btoa(String.fromCharCode(...new Uint8Array(digest)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+
+async function connectSpotify() {
   clientId = document.getElementById('clientIdInput').value.trim();
   if (!clientId) { showToast('Paste your Client ID first', 'error'); return; }
   save();
+
+  const verifier = generateRandomString(64);
+  const challenge = await generateCodeChallenge(verifier);
+  sessionStorage.setItem('pkce_verifier', verifier);
+  sessionStorage.setItem('wu_clientId', clientId);
+
   const scopes = 'streaming user-read-email user-read-private user-modify-playback-state user-read-playback-state';
-  const url = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(scopes)}`;
-  window.location = url;
+  const params = new URLSearchParams({
+    client_id: clientId,
+    response_type: 'code',
+    redirect_uri: REDIRECT_URI,
+    scope: scopes,
+    code_challenge_method: 'S256',
+    code_challenge: challenge
+  });
+  window.location = 'https://accounts.spotify.com/authorize?' + params.toString();
 }
 
-function checkToken() {
-  const hash = window.location.hash;
-  if (hash) {
-    const p = new URLSearchParams(hash.slice(1));
-    const t = p.get('access_token');
-    if (t) {
-      spotifyToken = t;
-      sessionStorage.setItem('wu_tok', t);
-      window.history.replaceState({}, '', window.location.pathname);
-      markConnected();
-      showToast('Spotify connected! ✓', 'success');
-      return;
+async function checkToken() {
+  // Check for auth code in URL (after Spotify redirect)
+  const urlParams = new URLSearchParams(window.location.search);
+  const code = urlParams.get('code');
+  if (code) {
+    window.history.replaceState({}, '', window.location.pathname);
+    const verifier = sessionStorage.getItem('pkce_verifier');
+    const storedClientId = sessionStorage.getItem('wu_clientId');
+    if (!verifier || !storedClientId) { showToast('Auth error — try connecting again', 'error'); return; }
+
+    try {
+      const r = await fetch('https://accounts.spotify.com/api/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          client_id: storedClientId,
+          grant_type: 'authorization_code',
+          code,
+          redirect_uri: REDIRECT_URI,
+          code_verifier: verifier
+        })
+      });
+      const data = await r.json();
+      if (data.access_token) {
+        spotifyToken = data.access_token;
+        clientId = storedClientId;
+        document.getElementById('clientIdInput').value = clientId;
+        sessionStorage.setItem('wu_tok', spotifyToken);
+        // Store refresh token and expiry
+        if (data.refresh_token) sessionStorage.setItem('wu_refresh', data.refresh_token);
+        sessionStorage.setItem('wu_expiry', Date.now() + (data.expires_in * 1000));
+        markConnected();
+        showToast('Spotify connected! ✓', 'success');
+      } else {
+        showToast('Spotify auth failed — try again', 'error');
+      }
+    } catch(e) {
+      showToast('Connection error — try again', 'error');
     }
+    return;
   }
+
+  // Check for saved token
   const saved = sessionStorage.getItem('wu_tok');
-  if (saved) { spotifyToken = saved; markConnected(); }
+  const expiry = sessionStorage.getItem('wu_expiry');
+  const savedClientId = sessionStorage.getItem('wu_clientId');
+  if (saved && expiry && Date.now() < parseInt(expiry)) {
+    spotifyToken = saved;
+    if (savedClientId) {
+      clientId = savedClientId;
+      document.getElementById('clientIdInput').value = clientId;
+    }
+    markConnected();
+  }
 }
 
 function markConnected() {
