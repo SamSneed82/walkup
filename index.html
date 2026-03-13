@@ -436,12 +436,31 @@ button, .voice-chip, .roster-item, .player-card, .song-result,
 <div class="field-lights"></div>
 <div class="grid-bg"></div>
 
+<!-- JS Error Banner -->
+<div id="errBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:#ff4545;color:#fff;font-size:12px;padding:10px 14px;font-family:monospace;white-space:pre-wrap;word-break:break-all;"></div>
+
+<script>
+// Catch ALL JS errors and show them on screen
+window.onerror = function(msg, src, line, col, err) {
+  const b = document.getElementById('errBanner');
+  if (b) { b.style.display='block'; b.textContent = 'JS ERROR line '+line+': '+msg; }
+  return false;
+};
+window.addEventListener('unhandledrejection', function(e) {
+  const b = document.getElementById('errBanner');
+  if (b) { b.style.display='block'; b.textContent = 'PROMISE ERROR: '+(e.reason?.message || e.reason); }
+});
+</script>
+<div id="errBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:#ff4545;color:#fff;font-family:monospace;font-size:11px;padding:10px 14px;line-height:1.4;white-space:pre-wrap;word-break:break-all;"></div>
+
 <!-- ══════════════════════════════════════════ -->
 <!--  SETUP SCREEN                             -->
 <!-- ══════════════════════════════════════════ -->
 <div class="screen active" id="setupScreen">
   <div class="setup-wrap">
 
+    <div id="jsError" style="display:none;background:#ff4545;color:#fff;padding:10px 16px;font-size:12px;border-radius:8px;margin:10px 16px 0;"></div>
+    <div id="jsError" style="display:none;background:var(--red);color:#fff;padding:10px 16px;font-size:12px;border-radius:8px;margin:10px 0;line-height:1.5;"></div>
     <div class="logo-bar">
       <div class="logo-icon">⚾</div>
       <div class="logo-text">WALK<span>-UP</span></div>
@@ -574,6 +593,23 @@ button, .voice-chip, .roster-item, .player-card, .song-result,
 <script>
 // ── State ─── (touch bridge removed)
 
+// ── Global error catcher ─────────────────────
+window.onerror = function(msg, src, line, col, err) {
+  const banner = document.getElementById('errBanner');
+  if (banner) {
+    banner.style.display = 'block';
+    banner.textContent = 'JS ERROR: ' + msg + '\nLine ' + line + ': ' + (err && err.stack ? err.stack.split('\n')[0] : '');
+  }
+  return false;
+};
+window.addEventListener('unhandledrejection', function(e) {
+  const banner = document.getElementById('errBanner');
+  if (banner) {
+    banner.style.display = 'block';
+    banner.textContent = 'PROMISE ERROR: ' + (e.reason && e.reason.message ? e.reason.message : String(e.reason));
+  }
+});
+
 // ── State ───────────────────────────────────
 let players = [], idCtr = 0, style = 'hype';
 let spotifyToken = null, clientId = '';
@@ -587,6 +623,12 @@ const REDIRECT_URI = "https://samsneed82.github.io/walkup/";
 const el = document.getElementById('redirectUriDisplay');
 if (el) el.textContent = REDIRECT_URI;
 
+// ── Global JS error display ──────────────────
+window.onerror = function(msg, src, line, col, err) {
+  const el = document.getElementById('jsError');
+  if (el) { el.textContent = '⚠ App error: ' + msg + ' (line ' + line + ')'; el.style.display = 'block'; }
+};
+
 // Restore session
 try {
   const d = JSON.parse(sessionStorage.getItem('wu') || '{}');
@@ -597,19 +639,23 @@ try {
   if (d.teamName) document.getElementById('teamName').value = d.teamName;
   if (d.phrase) document.getElementById('announcePhrase').value = d.phrase;
   if (d.idCtr) idCtr = d.idCtr;
-} catch(e) {}
+} catch(e) { console.warn('Session restore error:', e); }
 
-checkToken();
-if (!players.length) { addPlayer(); addPlayer(); } else renderPlayers();
-syncStyleChips();
-renderBattingOrder();
+try { checkToken(); } catch(e) { console.warn('checkToken error:', e); }
+try { if (!players.length) { addPlayer(); addPlayer(); } else renderPlayers(); } catch(e) { console.warn('render error:', e); }
+try { syncStyleChips(); } catch(e) {}
+try { renderBattingOrder(); } catch(e) {}
 
-// Attach connect button listener explicitly for iOS reliability
-document.getElementById('connectBtn').addEventListener('click', connectSpotify);
-document.getElementById('connectBtn').addEventListener('touchend', function(e) {
-  e.preventDefault();
-  connectSpotify();
-});
+// Attach all critical button listeners safely for iOS reliability
+function safeOn(id, fn) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener('click', fn);
+  el.addEventListener('touchend', function(e) { e.preventDefault(); fn(); });
+}
+safeOn('connectBtn', connectSpotify);
+safeOn('mainPlayBtn', triggerWalkup);
+safeOn('nextBatterBtn', nextBatter);
 
 // ── Spotify OAuth ────────────────────────────
 // ── PKCE helpers ────────────────────────────
