@@ -26,6 +26,12 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+/* iOS Safari click fix — cursor:pointer is required to fire click events on non-button elements */
+button, [onclick], .voice-chip, .song-result, .order-add-opt, .roster-item, .player-card, .phonetic-toggle {
+  cursor: pointer;
+  touch-action: manipulation;
+}
 html, body { background: var(--bg); color: var(--chalk); font-family: 'Outfit', sans-serif; overflow-x: hidden; }
 
 .field-lights {
@@ -38,6 +44,15 @@ html, body { background: var(--bg); color: var(--chalk); font-family: 'Outfit', 
   background-image: linear-gradient(rgba(255,255,255,0.016) 1px, transparent 1px),
                     linear-gradient(90deg, rgba(255,255,255,0.016) 1px, transparent 1px);
   background-size: 30px 30px;
+}
+
+/* iOS touch fix — ensure all buttons/clickables register taps */
+button, .voice-chip, .roster-item, .player-card, .song-result, 
+.order-add-opt, .order-item, .phonetic-toggle, .add-btn, 
+.back-btn, .game-btn, .next-batter-btn, .btn-green {
+  cursor: pointer;
+  -webkit-tap-highlight-color: rgba(30,215,96,0.15);
+  touch-action: manipulation;
 }
 
 /* ── SCREENS ── */
@@ -165,6 +180,7 @@ html, body { background: var(--bg); color: var(--chalk); font-family: 'Outfit', 
   width: 100%; background: none; border-left: none; border-right: none; border-top: none;
   text-align: left; color: var(--chalk); font-family: 'Outfit', sans-serif;
   -webkit-appearance: none; appearance: none;
+  touch-action: manipulation; -webkit-tap-highlight-color: rgba(30,215,96,0.15);
 }
 .song-result:last-child { border-bottom: none; }
 .song-result:hover, .song-result:active { background: rgba(30,215,96,0.07); }
@@ -450,11 +466,11 @@ html, body { background: var(--bg); color: var(--chalk); font-family: 'Outfit', 
           <li>Paste it below and tap Connect</li>
         </ol>
         <input class="field field-mono mb8" id="clientIdInput" placeholder="Paste Client ID here..." spellcheck="false" autocomplete="off">
-        <button class="btn-green" id="connectBtn" type="button" onclick="connectSpotify()">🎵 Connect to Spotify</button>
+        <button class="btn-green" id="connectBtn" type="button" data-action="connectSpotify">🎵 Connect to Spotify</button>
         <div id="connectedBadge" style="display:none; margin-top:10px">
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
             <span class="connected-badge">✓ Spotify Connected</span>
-            <button onclick="disconnectSpotify()" style="background:none;border:1px solid var(--border);color:var(--muted);font-family:'Outfit',sans-serif;font-size:11px;border-radius:8px;padding:5px 12px;cursor:pointer;">↻ Reconnect</button>
+            <button data-action="disconnectSpotify" style="background:none;border:1px solid var(--border);color:var(--muted);font-family:'Outfit',sans-serif;font-size:11px;border-radius:8px;padding:5px 12px;cursor:pointer;">↻ Reconnect</button>
           </div>
         </div>
       </div>
@@ -481,7 +497,7 @@ html, body { background: var(--bg); color: var(--chalk); font-family: 'Outfit', 
     <div class="section">
       <div class="sec-label">Roster</div>
       <div id="playerList"></div>
-      <button class="add-btn" onclick="addPlayer()">＋ Add Player</button>
+      <button class="add-btn" data-action="addPlayer">＋ Add Player</button>
     </div>
 
     <!-- Batting Order -->
@@ -489,7 +505,7 @@ html, body { background: var(--bg); color: var(--chalk); font-family: 'Outfit', 
       <div class="sec-label">Batting Order</div>
       <div class="order-list" id="orderList"></div>
       <div class="order-add-wrap">
-        <button class="add-btn" onclick="toggleOrderAdd()" id="orderAddBtn">＋ Add to Batting Order</button>
+        <button class="add-btn" data-action="toggleOrderAdd" id="orderAddBtn">＋ Add to Batting Order</button>
         <div class="order-add-results" id="orderAddResults"></div>
       </div>
     </div>
@@ -498,7 +514,7 @@ html, body { background: var(--bg); color: var(--chalk); font-family: 'Outfit', 
   </div>
 
   <div class="bottom-bar">
-    <button class="game-btn" onclick="startGame()">▶ &nbsp; START GAME DAY</button>
+    <button class="game-btn" data-action="startGame">▶ &nbsp; START GAME DAY</button>
   </div>
 </div>
 
@@ -508,9 +524,9 @@ html, body { background: var(--bg); color: var(--chalk); font-family: 'Outfit', 
 <div class="screen" id="gameScreen">
   <div class="game-wrap">
     <div class="game-topbar">
-      <button class="back-btn" onclick="goBack()">← Edit Roster</button>
+      <button class="back-btn" data-action="goBack">← Edit Roster</button>
       <div class="game-team" id="gameTeamName">TIGERS</div>
-      <div class="inning-badge" onclick="pickDevice()" style="cursor:pointer;" title="Choose Spotify device">📱 Device</div>
+      <div class="inning-badge" data-action="showDevicePicker" style="cursor:pointer;" title="Choose Spotify device">📱 Device</div>
     </div>
 
     <!-- Now Playing Card -->
@@ -520,19 +536,19 @@ html, body { background: var(--bg); color: var(--chalk); font-family: 'Outfit', 
       <div class="np-num" id="npNum">—</div>
       <div class="np-name" id="npName">SELECT A PLAYER</div>
       <div class="np-song" id="npSong">Choose from the roster below</div>
-      <button class="play-btn" id="mainPlayBtn" onclick="triggerWalkup()">▶</button>
+      <button class="play-btn" id="mainPlayBtn" data-action="triggerWalkup">▶</button>
       <div class="play-status" id="playStatus">Ready</div>
       <div id="debugPanel" style="display:none;background:rgba(0,0,0,0.4);border-radius:8px;padding:8px 10px;margin-top:10px;max-height:80px;overflow-y:auto;text-align:left;width:100%;"></div>
     </div>
 
-    <button class="next-batter-btn" onclick="nextBatter()" id="nextBatterBtn">
+    <button class="next-batter-btn" data-action="nextBatter" id="nextBatterBtn">
   ⚾ NEXT BATTER UP
 </button>
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
   <div class="roster-label" style="margin-bottom:0">BATTING ORDER — TAP ANY PLAYER</div>
   <div style="display:flex;gap:6px;">
-    <button onclick="showDevicePicker()" style="background:rgba(30,215,96,0.1);border:1px solid rgba(30,215,96,0.3);color:var(--green);font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;border-radius:8px;padding:6px 10px;cursor:pointer;">📱 Device</button>
-    <button onclick="precacheVoiceovers()" style="background:rgba(30,215,96,0.1);border:1px solid rgba(30,215,96,0.3);color:var(--green);font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;border-radius:8px;padding:6px 10px;cursor:pointer;">⚡ Pre-load</button>
+    <button data-action="showDevicePicker" style="background:rgba(30,215,96,0.1);border:1px solid rgba(30,215,96,0.3);color:var(--green);font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;border-radius:8px;padding:6px 10px;cursor:pointer;">📱 Device</button>
+    <button data-action="precacheVoiceovers" style="background:rgba(30,215,96,0.1);border:1px solid rgba(30,215,96,0.3);color:var(--green);font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;border-radius:8px;padding:6px 10px;cursor:pointer;">⚡ Pre-load</button>
   </div>
 </div>
     <div id="gameRoster"></div>
@@ -542,20 +558,22 @@ html, body { background: var(--bg); color: var(--chalk); font-family: 'Outfit', 
 <div class="toast" id="toast"></div>
 
 <!-- Script Editor Modal -->
-<div class="modal-overlay" id="scriptModal" onclick="closeScriptModal(event)">
+<div class="modal-overlay" id="scriptModal" data-action="closeModalOverlay">
   <div class="modal-box">
     <div class="modal-title" id="modalTitle">EDIT SCRIPT</div>
     <div class="modal-sub" id="modalSub">Customize exactly what the announcer says</div>
     <textarea class="modal-script" id="modalScript" rows="3"></textarea>
-    <button class="modal-regen" onclick="regenScript()">↻ Generate a new random script</button>
+    <button class="modal-regen" data-action="regenScript">↻ Generate a new random script</button>
     <div class="modal-actions">
-      <button class="modal-btn modal-btn-secondary" onclick="closeScriptModal()">Cancel</button>
-      <button class="modal-btn modal-btn-primary" onclick="saveScript()">✓ Save & Use This</button>
+      <button class="modal-btn modal-btn-secondary" data-action="closeScriptModal">Cancel</button>
+      <button class="modal-btn modal-btn-primary" data-action="saveScript">✓ Save & Use This</button>
     </div>
   </div>
 </div>
 
 <script>
+// ── State ─── (touch bridge removed)
+
 // ── State ───────────────────────────────────
 let players = [], idCtr = 0, style = 'hype';
 let spotifyToken = null, clientId = '';
@@ -585,6 +603,13 @@ checkToken();
 if (!players.length) { addPlayer(); addPlayer(); } else renderPlayers();
 syncStyleChips();
 renderBattingOrder();
+
+// Attach connect button listener explicitly for iOS reliability
+document.getElementById('connectBtn').addEventListener('click', connectSpotify);
+document.getElementById('connectBtn').addEventListener('touchend', function(e) {
+  e.preventDefault();
+  connectSpotify();
+});
 
 // ── Spotify OAuth ────────────────────────────
 // ── PKCE helpers ────────────────────────────
@@ -807,7 +832,7 @@ function renderPlayers() {
           <div class="ss-title">${esc(p.trackName)}</div>
           <div class="ss-artist">${esc(p.trackArtist)}</div>
         </div>
-        <button class="ss-clear" onclick="clearSong(${p.id})">✕</button>
+        <button class="ss-clear" data-action="clearSong" data-id="${p.id}">✕</button>
       </div>
       <div class="seek-row">
         <label>Start at:</label>
@@ -828,7 +853,7 @@ function renderPlayers() {
       <div class="pc-header">
         <div class="pc-num">${p.number || '#'}</div>
         <div class="pc-name${p.name ? '' : ' ph'}">${p.name || 'Enter player name'}</div>
-        <button class="pc-remove" onclick="removePlayer(${p.id})">✕</button>
+        <button class="pc-remove" data-action="removePlayer" data-id="${p.id}">✕</button>
       </div>
       <div class="pc-row1">
         <input class="field" placeholder="#" maxlength="3" value="${p.number}"
@@ -837,7 +862,7 @@ function renderPlayers() {
         <input class="field" placeholder="Player full name" value="${p.name}"
           oninput="setField(${p.id},'name',this.value)">
       </div>
-      <label class="phonetic-toggle" onclick="togglePhonetic(${p.id})">
+      <label class="phonetic-toggle" data-action="togglePhonetic" data-id="${p.id}">
         <input type="checkbox" ${p.usePhonetic ? 'checked' : ''}>
         <div class="pt-track"><div class="pt-thumb"></div></div>
         <span class="pt-label">Custom pronunciation</span>
@@ -901,13 +926,7 @@ async function searchSong(id, query) {
   }, 380);
 }
 
-// Use mousedown/touchstart so dismiss doesn't cancel the song tap
-document.addEventListener('touchstart', e => {
-  if (!e.target.closest('.song-search-wrap')) {
-    document.querySelectorAll('.song-results').forEach(r => r.style.display = 'none');
-  }
-}, { passive: true });
-document.addEventListener('mousedown', e => {
+document.addEventListener('click', e => {
   if (!e.target.closest('.song-search-wrap')) {
     document.querySelectorAll('.song-results').forEach(r => r.style.display = 'none');
   }
@@ -930,9 +949,9 @@ function renderBattingOrder() {
         <div class="order-name">${esc(p.name)}</div>
         <div class="order-song">${p.trackName ? '🎵 ' + esc(p.trackName) : '⚠ No song'}</div>
       </div>
-      <button class="order-move" onclick="moveOrderItem(${idx}, -1)" ${idx === 0 ? 'disabled style="opacity:0.3"' : ''}>↑</button>
-      <button class="order-move" onclick="moveOrderItem(${idx}, 1)" ${idx === battingOrder.length - 1 ? 'disabled style="opacity:0.3"' : ''}>↓</button>
-      <button class="order-remove" onclick="removeOrderItem(${idx})">✕</button>
+      <button class="order-move" data-action="moveOrderUp" data-idx="${idx}" ${idx === 0 ? 'disabled style="opacity:0.3"' : ''}>↑</button>
+      <button class="order-move" data-action="moveOrderDown" data-idx="${idx}" ${idx === battingOrder.length - 1 ? 'disabled style="opacity:0.3"' : ''}>↓</button>
+      <button class="order-remove" data-action="removeOrderItem" data-idx="${idx}">✕</button>
     `;
     list.appendChild(div);
   });
@@ -945,7 +964,7 @@ function toggleOrderAdd() {
   const available = players.filter(p => p.name && p.number);
   if (!available.length) { showToast('Add players to the roster first!', 'error'); return; }
   res.innerHTML = available.map(p => `
-    <button class="order-add-opt" onclick="addToOrder(${p.id})">
+    <button class="order-add-opt" data-action="addToOrder" data-id="${p.id}">
       <div class="oao-num">${p.number}</div>
       <div>
         <div class="oao-name">${esc(p.name)}</div>
@@ -977,11 +996,7 @@ function moveOrderItem(idx, dir) {
   save();
 }
 
-// Close order add dropdown on outside click
-document.addEventListener('touchstart', e => {
-  if (!e.target.closest('.order-add-wrap')) document.getElementById('orderAddResults').style.display = 'none';
-}, { passive: true });
-document.addEventListener('mousedown', e => {
+document.addEventListener('click', e => {
   if (!e.target.closest('.order-add-wrap')) document.getElementById('orderAddResults').style.display = 'none';
 });
 
@@ -1072,7 +1087,7 @@ function renderGameRoster() {
         <div class="ri-name">${esc(p.name)}</div>
         <div class="ri-song">${p.trackName ? `🎵 ${esc(p.trackName)}` : '⚠ No song selected'}</div>
       </div>
-      <button onclick="event.stopPropagation();openScriptModal(${p.id})" style="background:none;border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:11px;padding:4px 8px;cursor:pointer;flex-shrink:0;font-family:'Outfit',sans-serif;" title="Edit script">✏️ Script</button>
+      <button data-action="openScriptModal" data-id="${p.id}" style="background:none;border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:11px;padding:4px 8px;cursor:pointer;flex-shrink:0;font-family:'Outfit',sans-serif;" title="Edit script">✏️ Script</button>
       <div class="ri-arrow">▶</div>
     `;
     list.appendChild(div);
@@ -1384,7 +1399,7 @@ async function showDevicePicker() {
   const opts = devs.map(d => {
     const icon = /smartphone|phone|iphone|android/i.test(d.type) ? '📱' : /tv|speaker|cast/i.test(d.type) ? '📺' : '💻';
     const isSaved = d.id === current;
-    return '<button onclick="pickDevice('' + d.id + '','' + d.name.replace(/'/g,'') + '')" style="display:block;width:100%;background:' + (isSaved ? 'rgba(30,215,96,0.15)' : 'var(--card2)') + ';border:1px solid ' + (isSaved ? 'var(--green)' : 'var(--border)') + ';border-radius:8px;padding:10px 14px;margin-bottom:8px;color:var(--chalk);font-family:Outfit,sans-serif;font-size:13px;cursor:pointer;text-align:left;">'
+    return '<button data-action="pickDevice" data-devid="' + d.id + '" data-devname="' + d.name.replace(/'/g,'') + '"' style="display:block;width:100%;background:' + (isSaved ? 'rgba(30,215,96,0.15)' : 'var(--card2)') + ';border:1px solid ' + (isSaved ? 'var(--green)' : 'var(--border)') + ';border-radius:8px;padding:10px 14px;margin-bottom:8px;color:var(--chalk);font-family:Outfit,sans-serif;font-size:13px;cursor:pointer;text-align:left;">'
       + icon + ' ' + d.name + ' <span style="color:var(--muted);font-size:11px;">(' + d.type + (d.is_active ? ', active' : '') + ')</span>'
       + (isSaved ? ' <span style="color:var(--green);font-size:11px;float:right;">✓ Selected</span>' : '')
       + '</button>';
@@ -1394,7 +1409,7 @@ async function showDevicePicker() {
   document.getElementById('modalSub').textContent = 'Choose which device Spotify plays music on';
   document.getElementById('modalScript').style.display = 'none';
   document.querySelector('.modal-regen').style.display = 'none';
-  document.querySelector('.modal-actions').innerHTML = '<button class="modal-btn modal-btn-secondary" onclick="closeDevicePicker()">Close</button>';
+  document.querySelector('.modal-actions').innerHTML = '<button class="modal-btn modal-btn-secondary" data-action="closeDevicePicker">Close</button>';
   document.getElementById('modalScript').insertAdjacentHTML('beforebegin', '<div id="deviceList">' + opts + '</div>');
   document.getElementById('scriptModal').classList.add('show');
 }
@@ -1412,7 +1427,7 @@ function closeDevicePicker() {
   if (dl) dl.remove();
   document.getElementById('modalScript').style.display = '';
   document.querySelector('.modal-regen').style.display = '';
-  document.querySelector('.modal-actions').innerHTML = '<button class="modal-btn modal-btn-secondary" onclick="closeScriptModal()">Cancel</button><button class="modal-btn modal-btn-primary" onclick="saveScript()">✓ Save & Use This</button>';
+  document.querySelector('.modal-actions').innerHTML = '<button class="modal-btn modal-btn-secondary" data-action="closeScriptModal">Cancel</button><button class="modal-btn modal-btn-primary" data-action="saveScript">✓ Save & Use This</button>';
 }
 
 async function pickDevice() {
