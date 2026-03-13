@@ -1445,9 +1445,12 @@ async function showDevicePicker() {
   const opts = devs.map(d => {
     const icon = /smartphone|phone|iphone|android/i.test(d.type) ? '📱' : /tv|speaker|cast/i.test(d.type) ? '📺' : '💻';
     const isSaved = d.id === current;
-    return '<button data-action="pickDevice" data-devid="' + d.id + '" data-devname="' + d.name.replace(/'/g,'') + '"' style="display:block;width:100%;background:' + (isSaved ? 'rgba(30,215,96,0.15)' : 'var(--card2)') + ';border:1px solid ' + (isSaved ? 'var(--green)' : 'var(--border)') + ';border-radius:8px;padding:10px 14px;margin-bottom:8px;color:var(--chalk);font-family:Outfit,sans-serif;font-size:13px;cursor:pointer;text-align:left;">'
+    const bg = isSaved ? 'rgba(30,215,96,0.15)' : 'var(--card2)';
+    const borderCol = isSaved ? 'var(--green)' : 'var(--border)';
+    const savedBadge = isSaved ? ' <span style="color:var(--green);font-size:11px;float:right;">✓ Selected</span>' : '';
+    return '<button data-action="pickDevice" data-devid="' + d.id + '" data-devname="' + d.name.replace(/'/g,'') + '" style="display:block;width:100%;background:' + bg + ';border:1px solid ' + borderCol + ';border-radius:8px;padding:10px 14px;margin-bottom:8px;color:var(--chalk);font-family:Outfit,sans-serif;font-size:13px;cursor:pointer;text-align:left;">'
       + icon + ' ' + d.name + ' <span style="color:var(--muted);font-size:11px;">(' + d.type + (d.is_active ? ', active' : '') + ')</span>'
-      + (isSaved ? ' <span style="color:var(--green);font-size:11px;float:right;">✓ Selected</span>' : '')
+      + savedBadge
       + '</button>';
   }).join('');
 
