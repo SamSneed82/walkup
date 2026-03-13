@@ -450,7 +450,7 @@ html, body { background: var(--bg); color: var(--chalk); font-family: 'Outfit', 
           <li>Paste it below and tap Connect</li>
         </ol>
         <input class="field field-mono mb8" id="clientIdInput" placeholder="Paste Client ID here..." spellcheck="false" autocomplete="off">
-        <button class="btn-green" id="connectBtn" onclick="connectSpotify()">🎵 Connect to Spotify</button>
+        <button class="btn-green" id="connectBtn" type="button" onclick="connectSpotify()">🎵 Connect to Spotify</button>
         <div id="connectedBadge" style="display:none; margin-top:10px">
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
             <span class="connected-badge">✓ Spotify Connected</span>
@@ -602,26 +602,41 @@ async function generateCodeChallenge(verifier) {
     .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 }
 
+// PKCE Connect — fully async, works on iOS Safari
+// We use a simple approach: generate everything inside the async function
+// and use window.open with _self target which iOS allows from async context
 async function connectSpotify() {
   clientId = document.getElementById('clientIdInput').value.trim();
   if (!clientId) { showToast('Paste your Client ID first', 'error'); return; }
   save();
 
-  const verifier = generateRandomString(64);
-  const challenge = await generateCodeChallenge(verifier);
-  sessionStorage.setItem('pkce_verifier', verifier);
-  sessionStorage.setItem('wu_clientId', clientId);
+  const btn = document.getElementById('connectBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Connecting...';
 
-  const scopes = 'streaming user-read-email user-read-private user-modify-playback-state user-read-playback-state';
-  const params = new URLSearchParams({
-    client_id: clientId,
-    response_type: 'code',
-    redirect_uri: REDIRECT_URI,
-    scope: scopes,
-    code_challenge_method: 'S256',
-    code_challenge: challenge
-  });
-  window.location = 'https://accounts.spotify.com/authorize?' + params.toString();
+  try {
+    const verifier = generateRandomString(64);
+    const challenge = await generateCodeChallenge(verifier);
+
+    sessionStorage.setItem('pkce_verifier', verifier);
+    sessionStorage.setItem('wu_clientId', clientId);
+
+    const scopes = 'streaming user-read-email user-read-private user-modify-playback-state user-read-playback-state';
+    const params = new URLSearchParams({
+      client_id: clientId,
+      response_type: 'code',
+      redirect_uri: REDIRECT_URI,
+      scope: scopes,
+      code_challenge_method: 'S256',
+      code_challenge: challenge
+    });
+
+    window.location.href = 'https://accounts.spotify.com/authorize?' + params.toString();
+  } catch(e) {
+    btn.disabled = false;
+    btn.innerHTML = '🎵 Connect to Spotify';
+    showToast('Error: ' + e.message, 'error');
+  }
 }
 
 async function checkToken() {
@@ -1496,7 +1511,14 @@ function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').re
 
 document.getElementById('teamName').addEventListener('input', save);
 document.getElementById('announcePhrase').addEventListener('input', save);
-document.getElementById('clientIdInput').addEventListener('input', () => { clientId = document.getElementById('clientIdInput').value; save(); });
+// Pre-generate PKCE on load if client ID already saved
+if (clientId && clientId.length > 10) prepareConnect();
+document.getElementById('clientIdInput').addEventListener('input', () => {
+  clientId = document.getElementById('clientIdInput').value;
+  save();
+  // Pre-generate PKCE challenge so connect button works instantly on iOS
+  if (clientId.length > 10) prepareConnect();
+});
 </script>
 </body>
 </html>
