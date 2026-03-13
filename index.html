@@ -306,6 +306,97 @@ html, body { background: var(--bg); color: var(--chalk); font-family: 'Outfit', 
 .ri-arrow { color: var(--muted); font-size: 16px; }
 .roster-item.cur .ri-arrow { color: var(--green); }
 
+/* Batting order */
+.order-list { margin-bottom: 12px; }
+.order-item {
+  display: flex; align-items: center; gap: 10px; background: var(--card);
+  border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px;
+  margin-bottom: 6px; user-select: none;
+}
+.order-item .order-pos {
+  font-family: 'Bebas Neue', sans-serif; font-size: 15px; color: var(--muted);
+  width: 20px; text-align: center; flex-shrink: 0;
+}
+.order-item .order-num {
+  background: var(--green); color: #000; font-family: 'Bebas Neue', sans-serif;
+  font-size: 16px; width: 30px; height: 30px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.order-item .order-name { flex: 1; font-size: 13px; font-weight: 600; }
+.order-item .order-song { font-size: 11px; color: var(--muted); }
+.order-move { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; padding: 2px 5px; border-radius: 5px; transition: color 0.15s; line-height: 1; }
+.order-move:hover { color: var(--green); }
+.order-remove { background: none; border: none; color: var(--muted2); cursor: pointer; font-size: 14px; padding: 2px 5px; border-radius: 5px; line-height: 1; }
+.order-remove:hover { color: var(--red); }
+.order-add-wrap { position: relative; }
+.order-add-results {
+  position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+  background: var(--card2); border: 1px solid var(--border); border-radius: 10px;
+  z-index: 50; box-shadow: 0 8px 24px rgba(0,0,0,0.5); overflow: hidden; display: none;
+}
+.order-add-opt {
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+  cursor: pointer; transition: background 0.15s; border-bottom: 1px solid var(--border);
+  width: 100%; background: none; border-left: none; border-right: none; border-top: none;
+  text-align: left; color: var(--chalk); font-family: 'Outfit', sans-serif;
+}
+.order-add-opt:last-child { border-bottom: none; }
+.order-add-opt:hover { background: rgba(30,215,96,0.07); }
+.order-add-opt .oao-num {
+  background: var(--green); color: #000; font-family: 'Bebas Neue', sans-serif;
+  font-size: 14px; width: 26px; height: 26px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.order-add-opt .oao-name { font-size: 13px; font-weight: 600; }
+
+/* Script editor modal */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 100;
+  display: flex; align-items: flex-end; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.25s;
+}
+.modal-overlay.show { opacity: 1; pointer-events: all; }
+.modal-box {
+  background: var(--card); border: 1px solid var(--border-accent); border-radius: 20px 20px 0 0;
+  padding: 24px 20px 40px; width: 100%; max-width: 600px;
+  transform: translateY(40px); transition: transform 0.25s;
+}
+.modal-overlay.show .modal-box { transform: translateY(0); }
+.modal-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 1px; margin-bottom: 4px; }
+.modal-sub { font-size: 11px; color: var(--muted); margin-bottom: 16px; }
+.modal-script {
+  width: 100%; background: var(--card2); border: 1px solid var(--border);
+  border-radius: 10px; color: var(--chalk); font-family: 'Outfit', sans-serif;
+  font-size: 14px; padding: 12px 14px; outline: none; resize: vertical;
+  min-height: 80px; line-height: 1.5;
+}
+.modal-script:focus { border-color: var(--green); }
+.modal-actions { display: flex; gap: 10px; margin-top: 14px; }
+.modal-btn {
+  flex: 1; padding: 12px; border-radius: 10px; border: none; font-family: 'Outfit', sans-serif;
+  font-weight: 700; font-size: 14px; cursor: pointer; transition: all 0.18s;
+}
+.modal-btn-primary { background: var(--green); color: #000; }
+.modal-btn-primary:hover { background: #26f070; }
+.modal-btn-secondary { background: var(--card2); color: var(--chalk); border: 1px solid var(--border); }
+.modal-btn-secondary:hover { border-color: var(--green); color: var(--green); }
+.modal-regen { font-size: 12px; color: var(--muted); background: none; border: none; cursor: pointer; padding: 0; margin-top: 8px; display: block; }
+.modal-regen:hover { color: var(--green); }
+
+/* Next batter button */
+.next-batter-btn {
+  width: 100%; background: rgba(30,215,96,0.08); border: 1px solid var(--border-accent);
+  color: var(--green); font-family: 'Bebas Neue', sans-serif; font-size: 18px;
+  letter-spacing: 2px; border-radius: 12px; padding: 14px; cursor: pointer;
+  transition: all 0.18s; margin-bottom: 14px; display: flex; align-items: center;
+  justify-content: center; gap: 10px;
+}
+.next-batter-btn:hover { background: rgba(30,215,96,0.15); }
+
+/* Current batter highlight in game roster */
+.roster-item.next-up { border-color: rgba(240,192,64,0.4); background: rgba(240,192,64,0.05); }
+.roster-item.next-up .ri-num { background: var(--gold); color: #000; }
+
 /* Toast */
 .toast {
   position: fixed; bottom: 90px; left: 50%;
@@ -390,6 +481,16 @@ html, body { background: var(--bg); color: var(--chalk); font-family: 'Outfit', 
       <button class="add-btn" onclick="addPlayer()">＋ Add Player</button>
     </div>
 
+    <!-- Batting Order -->
+    <div class="section">
+      <div class="sec-label">Batting Order</div>
+      <div class="order-list" id="orderList"></div>
+      <div class="order-add-wrap">
+        <button class="add-btn" onclick="toggleOrderAdd()" id="orderAddBtn">＋ Add to Batting Order</button>
+        <div class="order-add-results" id="orderAddResults"></div>
+      </div>
+    </div>
+
     <div style="height:90px"></div>
   </div>
 
@@ -418,12 +519,16 @@ html, body { background: var(--bg); color: var(--chalk); font-family: 'Outfit', 
       <div class="np-song" id="npSong">Choose from the roster below</div>
       <button class="play-btn" id="mainPlayBtn" onclick="triggerWalkup()">▶</button>
       <div class="play-status" id="playStatus">Ready</div>
+      <div id="debugPanel" style="display:none;background:rgba(0,0,0,0.4);border-radius:8px;padding:8px 10px;margin-top:10px;max-height:80px;overflow-y:auto;text-align:left;width:100%;"></div>
     </div>
 
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-  <div class="roster-label" style="margin-bottom:0">BATTING ORDER — TAP TO SELECT</div>
+    <button class="next-batter-btn" onclick="nextBatter()" id="nextBatterBtn">
+  ⚾ NEXT BATTER UP
+</button>
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+  <div class="roster-label" style="margin-bottom:0">BATTING ORDER — TAP ANY PLAYER</div>
   <button onclick="precacheVoiceovers()" style="background:rgba(30,215,96,0.1);border:1px solid rgba(30,215,96,0.3);color:var(--green);font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;border-radius:8px;padding:6px 12px;cursor:pointer;">
-    ⚡ Pre-load Voices
+    ⚡ Pre-load
   </button>
 </div>
     <div id="gameRoster"></div>
@@ -432,12 +537,28 @@ html, body { background: var(--bg); color: var(--chalk); font-family: 'Outfit', 
 
 <div class="toast" id="toast"></div>
 
+<!-- Script Editor Modal -->
+<div class="modal-overlay" id="scriptModal" onclick="closeScriptModal(event)">
+  <div class="modal-box">
+    <div class="modal-title" id="modalTitle">EDIT SCRIPT</div>
+    <div class="modal-sub" id="modalSub">Customize exactly what the announcer says</div>
+    <textarea class="modal-script" id="modalScript" rows="3"></textarea>
+    <button class="modal-regen" onclick="regenScript()">↻ Generate a new random script</button>
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-secondary" onclick="closeScriptModal()">Cancel</button>
+      <button class="modal-btn modal-btn-primary" onclick="saveScript()">✓ Save & Use This</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ── State ───────────────────────────────────
 let players = [], idCtr = 0, style = 'hype';
 let spotifyToken = null, clientId = '';
 let currentPlayer = null, playing = false;
 let searchTimers = {};
+let battingOrder = [];       // array of player ids in order
+let currentBatterIndex = -1; // which spot in order we're on
 
 // Set redirect URI display
 const REDIRECT_URI = "https://samsneed82.github.io/walkup/";
@@ -449,6 +570,7 @@ try {
   const d = JSON.parse(sessionStorage.getItem('wu') || '{}');
   if (d.players?.length) players = d.players;
   if (d.style) style = d.style;
+  if (d.battingOrder?.length) battingOrder = d.battingOrder;
   if (d.clientId) { clientId = d.clientId; document.getElementById('clientIdInput').value = clientId; }
   if (d.teamName) document.getElementById('teamName').value = d.teamName;
   if (d.phrase) document.getElementById('announcePhrase').value = d.phrase;
@@ -458,6 +580,7 @@ try {
 checkToken();
 if (!players.length) { addPlayer(); addPlayer(); } else renderPlayers();
 syncStyleChips();
+renderBattingOrder();
 
 // ── Spotify OAuth ────────────────────────────
 // ── PKCE helpers ────────────────────────────
@@ -744,12 +867,133 @@ document.addEventListener('mousedown', e => {
   }
 });
 
+// ── Batting Order ────────────────────────────
+function renderBattingOrder() {
+  const list = document.getElementById('orderList');
+  if (!list) return;
+  list.innerHTML = '';
+  battingOrder.forEach((pid, idx) => {
+    const p = players.find(p => p.id === pid);
+    if (!p) return;
+    const div = document.createElement('div');
+    div.className = 'order-item';
+    div.innerHTML = `
+      <div class="order-pos">${idx + 1}</div>
+      <div class="order-num">${p.number}</div>
+      <div style="flex:1;min-width:0">
+        <div class="order-name">${esc(p.name)}</div>
+        <div class="order-song">${p.trackName ? '🎵 ' + esc(p.trackName) : '⚠ No song'}</div>
+      </div>
+      <button class="order-move" onclick="moveOrderItem(${idx}, -1)" ${idx === 0 ? 'disabled style="opacity:0.3"' : ''}>↑</button>
+      <button class="order-move" onclick="moveOrderItem(${idx}, 1)" ${idx === battingOrder.length - 1 ? 'disabled style="opacity:0.3"' : ''}>↓</button>
+      <button class="order-remove" onclick="removeOrderItem(${idx})">✕</button>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function toggleOrderAdd() {
+  const res = document.getElementById('orderAddResults');
+  if (res.style.display === 'block') { res.style.display = 'none'; return; }
+  // Show players not yet in order
+  const available = players.filter(p => p.name && p.number);
+  if (!available.length) { showToast('Add players to the roster first!', 'error'); return; }
+  res.innerHTML = available.map(p => `
+    <button class="order-add-opt" onclick="addToOrder(${p.id})">
+      <div class="oao-num">${p.number}</div>
+      <div>
+        <div class="oao-name">${esc(p.name)}</div>
+        <div style="font-size:10px;color:var(--muted)">${p.trackName ? esc(p.trackName) : 'No song'}</div>
+      </div>
+    </button>
+  `).join('');
+  res.style.display = 'block';
+}
+
+function addToOrder(pid) {
+  battingOrder.push(pid);
+  document.getElementById('orderAddResults').style.display = 'none';
+  renderBattingOrder();
+  save();
+}
+
+function removeOrderItem(idx) {
+  battingOrder.splice(idx, 1);
+  renderBattingOrder();
+  save();
+}
+
+function moveOrderItem(idx, dir) {
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= battingOrder.length) return;
+  [battingOrder[idx], battingOrder[newIdx]] = [battingOrder[newIdx], battingOrder[idx]];
+  renderBattingOrder();
+  save();
+}
+
+// Close order add dropdown on outside click
+document.addEventListener('touchstart', e => {
+  if (!e.target.closest('.order-add-wrap')) document.getElementById('orderAddResults').style.display = 'none';
+}, { passive: true });
+document.addEventListener('mousedown', e => {
+  if (!e.target.closest('.order-add-wrap')) document.getElementById('orderAddResults').style.display = 'none';
+});
+
+// ── Script Editor ─────────────────────────────
+let editingPlayerId = null;
+
+function openScriptModal(playerId) {
+  editingPlayerId = playerId;
+  const p = players.find(p => p.id === playerId);
+  if (!p) return;
+  const phrase = document.getElementById('announcePhrase')?.value || 'Now batting';
+  const spokenName = (p.usePhonetic && p.phonetic) ? p.phonetic : p.name;
+  // Use saved custom script or generate one
+  const script = p.customScript || buildScript(phrase, p.number, spokenName, getRandomStyle());
+  document.getElementById('modalTitle').textContent = `#${p.number} — ${p.name.toUpperCase()}`;
+  document.getElementById('modalSub').textContent = 'Edit what the announcer says for this player';
+  document.getElementById('modalScript').value = script;
+  document.getElementById('scriptModal').classList.add('show');
+}
+
+function closeScriptModal(e) {
+  if (e && e.target !== document.getElementById('scriptModal')) return;
+  document.getElementById('scriptModal').classList.remove('show');
+  editingPlayerId = null;
+}
+
+function saveScript() {
+  const p = players.find(p => p.id === editingPlayerId);
+  if (p) {
+    p.customScript = document.getElementById('modalScript').value.trim();
+    save();
+    showToast('Script saved! ✓', 'success');
+  }
+  document.getElementById('scriptModal').classList.remove('show');
+  editingPlayerId = null;
+  // Re-render so script icon updates
+  renderGameRoster();
+}
+
+function regenScript() {
+  const p = players.find(p => p.id === editingPlayerId);
+  if (!p) return;
+  const phrase = document.getElementById('announcePhrase')?.value || 'Now batting';
+  const spokenName = (p.usePhonetic && p.phonetic) ? p.phonetic : p.name;
+  document.getElementById('modalScript').value = buildScript(phrase, p.number, spokenName, getRandomStyle());
+}
+
+function getRandomStyle() {
+  return ['hype','classic','fun'][Math.floor(Math.random() * 3)];
+}
+
 // ── Game Screen ──────────────────────────────
 function startGame() {
   if (!players.length) { showToast('Add at least one player!', 'error'); return; }
   if (players.some(p => !p.name || !p.number)) { showToast('Fill name & number for all players', 'error'); return; }
   if (!spotifyToken) { showToast('Connect Spotify first!', 'error'); return; }
   save();
+  currentBatterIndex = -1;
   document.getElementById('gameTeamName').textContent = (document.getElementById('teamName').value || 'GAME DAY').toUpperCase();
   renderGameRoster();
   showScreen('gameScreen');
@@ -763,28 +1007,41 @@ function goBack() {
 function renderGameRoster() {
   const list = document.getElementById('gameRoster');
   list.innerHTML = '';
-  players.forEach(p => {
+
+  // Use batting order if set, otherwise fall back to roster order
+  const orderedIds = battingOrder.length ? battingOrder : players.map(p => p.id);
+
+  orderedIds.forEach((pid, idx) => {
+    const p = players.find(p => p.id === pid);
+    if (!p) return;
+    const isNext = idx === currentBatterIndex + 1;
     const div = document.createElement('div');
-    div.className = 'roster-item';
+    div.className = `roster-item${isNext ? ' next-up' : ''}`;
     div.id = `ri-${p.id}`;
-    div.onclick = () => pickPlayer(p.id);
+    div.onclick = () => pickPlayer(p.id, idx);
     div.innerHTML = `
+      ${battingOrder.length ? `<div style="font-size:11px;color:var(--muted);width:16px;text-align:center;flex-shrink:0">${idx+1}</div>` : ''}
       <div class="ri-num">${p.number}</div>
       <div class="ri-info">
         <div class="ri-name">${esc(p.name)}</div>
         <div class="ri-song">${p.trackName ? `🎵 ${esc(p.trackName)}` : '⚠ No song selected'}</div>
       </div>
+      <button onclick="event.stopPropagation();openScriptModal(${p.id})" style="background:none;border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:11px;padding:4px 8px;cursor:pointer;flex-shrink:0;font-family:'Outfit',sans-serif;" title="Edit script">✏️ Script</button>
       <div class="ri-arrow">▶</div>
     `;
     list.appendChild(div);
   });
 }
 
-function pickPlayer(id) {
+function pickPlayer(id, orderIdx) {
   stopAll();
   currentPlayer = players.find(p => p.id === id);
   if (!currentPlayer) return;
+  if (orderIdx !== undefined) currentBatterIndex = orderIdx;
   document.querySelectorAll('.roster-item').forEach(r => r.classList.remove('cur'));
+  document.getElementById(`ri-${id}`)?.classList.add('cur');
+  // Highlight next up
+  renderGameRoster();
   document.getElementById(`ri-${id}`)?.classList.add('cur');
 
   document.getElementById('npNum').textContent = currentPlayer.number;
@@ -815,6 +1072,19 @@ function pickPlayer(id) {
   document.getElementById('mainPlayBtn').textContent = '▶';
 }
 
+function nextBatter() {
+  const orderedIds = battingOrder.length ? battingOrder : players.map(p => p.id);
+  const nextIdx = currentBatterIndex + 1;
+  if (nextIdx >= orderedIds.length) {
+    // Cycle back to top
+    currentBatterIndex = -1;
+    showToast('Lineup complete — cycling back to top!', '');
+    pickPlayer(orderedIds[0], 0);
+    return;
+  }
+  pickPlayer(orderedIds[nextIdx], nextIdx);
+}
+
 async function triggerWalkup() {
   if (!currentPlayer) { showToast('Select a player first!', 'error'); return; }
   if (playing) { stopAll(); return; }
@@ -827,7 +1097,8 @@ async function triggerWalkup() {
   try {
     const phrase = document.getElementById('announcePhrase').value || 'Now batting';
     const spokenName = (currentPlayer.usePhonetic && currentPlayer.phonetic) ? currentPlayer.phonetic : currentPlayer.name;
-    const script = buildScript(phrase, currentPlayer.number, spokenName, style);
+    // Use custom script if set, otherwise randomize style each time
+    const script = currentPlayer.customScript || buildScript(phrase, currentPlayer.number, spokenName, getRandomStyle());
 
     setStatus('📢 Announcing...', true);
     await speak(script, style);
@@ -964,47 +1235,89 @@ async function playOnSpotify(uri, seekSec) {
   if (!spotifyToken) throw new Error('Not connected to Spotify');
 
   // Step 1: get devices
+  setStatus('🔍 Finding Spotify device...', true);
   const devR = await fetch('https://api.spotify.com/v1/me/player/devices', {
     headers: { 'Authorization': `Bearer ${spotifyToken}` }
   });
 
-  if (devR.status === 401) { spotifyToken = null; sessionStorage.removeItem('wu_tok'); throw new Error('Spotify session expired — reconnect'); }
+  if (devR.status === 401) {
+    spotifyToken = null;
+    sessionStorage.removeItem('wu_tok');
+    throw new Error('Spotify session expired — go back and reconnect');
+  }
 
   const devD = await devR.json();
   const devs = devD.devices || [];
+  debugLog('Devices found: ' + devs.length + ' — ' + devs.map(d => `${d.name}(${d.type},active:${d.is_active})`).join(', '));
 
   if (!devs.length) {
-    throw new Error('No Spotify device found — open the Spotify app on your phone first, then tap ▶ again!');
+    throw new Error('❌ No Spotify device found. Open the Spotify app on your phone, play any song briefly, then try again.');
   }
 
-  const dev = devs.find(d => d.is_active) || devs[0];
+  // Prefer active device, then phone/smartphone, then any
+  const dev = devs.find(d => d.is_active)
+    || devs.find(d => /smartphone|phone|iphone|android/i.test(d.type))
+    || devs[0];
 
-  // Step 2: If no active device, transfer playback to the found device first
-  if (!devs.find(d => d.is_active)) {
-    await fetch('https://api.spotify.com/v1/me/player', {
+  debugLog('Using device: ' + dev.name + ' (' + dev.type + ')');
+
+  // Step 2: Transfer playback to device if not active
+  if (!dev.is_active) {
+    setStatus('📲 Activating Spotify on ' + dev.name + '...', true);
+    const transferR = await fetch('https://api.spotify.com/v1/me/player', {
       method: 'PUT',
       headers: { 'Authorization': `Bearer ${spotifyToken}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ device_ids: [dev.id], play: false })
     });
-    // Small delay to let transfer complete
-    await new Promise(r => setTimeout(r, 800));
+    debugLog('Transfer status: ' + transferR.status);
+    await new Promise(r => setTimeout(r, 1200));
   }
 
   // Step 3: Play the track
+  setStatus('▶ Sending play command...', true);
+  const body = { uris: [uri], position_ms: (seekSec || 0) * 1000 };
+  debugLog('Playing URI: ' + uri + ' at ' + (seekSec||0) + 's');
+
   const r = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${dev.id}`, {
     method: 'PUT',
     headers: { 'Authorization': `Bearer ${spotifyToken}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ uris: [uri], position_ms: (seekSec || 0) * 1000 })
+    body: JSON.stringify(body)
   });
 
-  if (r.status === 401) { spotifyToken = null; sessionStorage.removeItem('wu_tok'); throw new Error('Spotify session expired — reconnect'); }
-  if (r.status === 403) throw new Error('Spotify Premium required for playback control');
-  if (r.status === 404) throw new Error('No active Spotify device — open Spotify on your phone first!');
-  if (r.status === 204) return; // success, no content expected
-  if (!r.ok) {
-    const body = await r.json().catch(() => ({}));
-    throw new Error(body?.error?.message || `Spotify error ${r.status}`);
+  debugLog('Play response: ' + r.status);
+
+  if (r.status === 401) {
+    spotifyToken = null; sessionStorage.removeItem('wu_tok');
+    throw new Error('Spotify session expired — go back and reconnect');
   }
+  if (r.status === 403) {
+    const errBody = await r.json().catch(() => ({}));
+    debugLog('403 body: ' + JSON.stringify(errBody));
+    throw new Error('❌ Spotify rejected the request. Make sure Spotify Premium is active and the app is open on your phone.');
+  }
+  if (r.status === 404) {
+    throw new Error('❌ Device lost — open Spotify on your phone and tap play on any song, then try again.');
+  }
+  if (r.status === 204 || r.ok) {
+    debugLog('✓ Play command accepted!');
+    return;
+  }
+  const errBody = await r.json().catch(() => ({}));
+  debugLog('Error body: ' + JSON.stringify(errBody));
+  throw new Error(errBody?.error?.message || 'Spotify error ' + r.status);
+}
+
+// Debug log panel
+function debugLog(msg) {
+  console.log('[Walkup]', msg);
+  const panel = document.getElementById('debugPanel');
+  if (!panel) return;
+  const line = document.createElement('div');
+  line.textContent = '› ' + msg;
+  line.style.cssText = 'font-size:10px;color:var(--muted);padding:1px 0;';
+  panel.appendChild(line);
+  panel.scrollTop = panel.scrollHeight;
+  panel.style.display = 'block';
 }
 
 function stopAll() {
@@ -1030,7 +1343,7 @@ function showScreen(id) {
 function save() {
   try {
     sessionStorage.setItem('wu', JSON.stringify({
-      players, style, idCtr,
+      players, style, idCtr, battingOrder,
       clientId: document.getElementById('clientIdInput').value,
       teamName: document.getElementById('teamName').value,
       phrase: document.getElementById('announcePhrase').value
