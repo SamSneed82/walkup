@@ -162,9 +162,12 @@ html, body { background: var(--bg); color: var(--chalk); font-family: 'Outfit', 
 .song-result {
   display: flex; align-items: center; gap: 10px; padding: 10px 12px; cursor: pointer;
   transition: background 0.15s; border-bottom: 1px solid var(--border);
+  width: 100%; background: none; border-left: none; border-right: none; border-top: none;
+  text-align: left; color: var(--chalk); font-family: 'Outfit', sans-serif;
+  -webkit-appearance: none; appearance: none;
 }
 .song-result:last-child { border-bottom: none; }
-.song-result:hover { background: rgba(30,215,96,0.07); }
+.song-result:hover, .song-result:active { background: rgba(30,215,96,0.07); }
 .song-result img { width: 38px; height: 38px; border-radius: 5px; object-fit: cover; flex-shrink: 0; }
 .song-result-info { flex: 1; min-width: 0; }
 .sr-title { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -695,22 +698,42 @@ async function searchSong(id, query) {
       const data = await r.json();
       const tracks = data.tracks?.items || [];
       if (!tracks.length) { res.innerHTML = `<div style="padding:14px;text-align:center;color:var(--muted);font-size:13px">No results</div>`; return; }
-      res.innerHTML = tracks.map(t => {
+      // Store tracks for tap handling
+      window._searchResults = window._searchResults || {};
+      window._searchResults[id] = tracks;
+
+      res.innerHTML = tracks.map((t, idx) => {
         const imgUrl = t.album.images[0]?.url || '';
         const imgHtml = imgUrl ? `<img src="${imgUrl}" alt="">` : `<div style="width:38px;height:38px;background:var(--muted2);border-radius:5px;flex-shrink:0"></div>`;
         const artists = t.artists.map(a => a.name).join(', ');
-        return `<div class="song-result" onclick='selectSong(${id},${JSON.stringify(t.uri)},${JSON.stringify(t.name)},${JSON.stringify(artists)},${JSON.stringify(imgUrl)})'>
+        return `<button class="song-result" data-playerid="${id}" data-idx="${idx}" type="button">
           ${imgHtml}
           <div class="song-result-info"><div class="sr-title">${esc(t.name)}</div><div class="sr-artist">${esc(artists)}</div></div>
-        </div>`;
+        </button>`;
       }).join('');
+
+      // Attach listeners after render
+      res.querySelectorAll('.song-result').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const pid = parseInt(this.dataset.playerid);
+          const track = window._searchResults[pid][parseInt(this.dataset.idx)];
+          const artists = track.artists.map(a => a.name).join(', ');
+          selectSong(pid, track.uri, track.name, artists, track.album.images[0]?.url || '');
+        });
+      });
     } catch(e) {
       res.innerHTML = `<div style="padding:14px;text-align:center;color:var(--red);font-size:13px">Search failed</div>`;
     }
   }, 380);
 }
 
-document.addEventListener('click', e => {
+// Use mousedown/touchstart so dismiss doesn't cancel the song tap
+document.addEventListener('touchstart', e => {
+  if (!e.target.closest('.song-search-wrap')) {
+    document.querySelectorAll('.song-results').forEach(r => r.style.display = 'none');
+  }
+}, { passive: true });
+document.addEventListener('mousedown', e => {
   if (!e.target.closest('.song-search-wrap')) {
     document.querySelectorAll('.song-results').forEach(r => r.style.display = 'none');
   }
