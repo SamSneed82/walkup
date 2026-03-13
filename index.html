@@ -1146,7 +1146,7 @@ function buildScript(phrase, num, name, s) {
 const voiceCache = {};
 
 // Charlie - energetic sports announcer voice
-const ELEVEN_VOICE_ID = 'pqHfZKP75CvOlQylNhV4'; // Bill - strong American male
+const ELEVEN_VOICE_ID = 'pNInz6obpgDQGcFmaJgB'; // Adam - deep American male
 const ELEVEN_API_KEY = 'sk_a64ce304e3d5144d74b64a89985c04f1b647dd8fb56f268b';
 
 async function speak(text, s) {
@@ -1168,11 +1168,11 @@ async function speak(text, s) {
       },
       body: JSON.stringify({
         text: text,
-        model_id: 'eleven_turbo_v2',
+        model_id: 'eleven_turbo_v2_5',
         voice_settings: {
-          stability: stability,
-          similarity_boost: similarity,
-          style: style,
+          stability: 0.3,        // lower = more expressive/dynamic
+          similarity_boost: 0.9, // high = stays true to voice
+          style: 0.75,           // high = more expressive delivery
           use_speaker_boost: true
         }
       })
@@ -1254,10 +1254,12 @@ async function playOnSpotify(uri, seekSec) {
     throw new Error('❌ No Spotify device found. Open the Spotify app on your phone, play any song briefly, then try again.');
   }
 
-  // Prefer active device, then phone/smartphone, then any
-  const dev = devs.find(d => d.is_active)
-    || devs.find(d => /smartphone|phone|iphone|android/i.test(d.type))
-    || devs[0];
+  // Always prefer smartphone/phone over everything else (for game day use)
+  // Only fall back to active non-phone device if no phone found at all
+  const phoneDev = devs.find(d => /smartphone|phone|iphone|android/i.test(d.type));
+  const activeDev = devs.find(d => d.is_active);
+  const dev = phoneDev || activeDev || devs[0];
+  debugLog('Phone device: ' + (phoneDev ? phoneDev.name : 'none'));
 
   debugLog('Using device: ' + dev.name + ' (' + dev.type + ')');
 
