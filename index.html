@@ -452,7 +452,10 @@ html, body { background: var(--bg); color: var(--chalk); font-family: 'Outfit', 
         <input class="field field-mono mb8" id="clientIdInput" placeholder="Paste Client ID here..." spellcheck="false" autocomplete="off">
         <button class="btn-green" id="connectBtn" onclick="connectSpotify()">🎵 Connect to Spotify</button>
         <div id="connectedBadge" style="display:none; margin-top:10px">
-          <span class="connected-badge">✓ Spotify Connected — Ready to play!</span>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <span class="connected-badge">✓ Spotify Connected</span>
+            <button onclick="disconnectSpotify()" style="background:none;border:1px solid var(--border);color:var(--muted);font-family:'Outfit',sans-serif;font-size:11px;border-radius:8px;padding:5px 12px;cursor:pointer;">↻ Reconnect</button>
+          </div>
         </div>
       </div>
     </div>
@@ -674,12 +677,39 @@ async function checkToken() {
       document.getElementById('clientIdInput').value = clientId;
     }
     markConnected();
+  } else if (saved) {
+    // Token exists but expired — clear it and show reconnect UI with ID pre-filled
+    sessionStorage.removeItem('wu_tok');
+    sessionStorage.removeItem('wu_expiry');
+    if (savedClientId) {
+      clientId = savedClientId;
+      document.getElementById('clientIdInput').value = clientId;
+    }
+    showToast('Spotify session expired — tap Connect to rejoin', '');
   }
 }
 
 function markConnected() {
   document.getElementById('connectBtn').style.display = 'none';
   document.getElementById('connectedBadge').style.display = 'block';
+  document.getElementById('clientIdInput').style.display = 'block';
+  // Always ensure clientId is visible in the field
+  if (clientId) document.getElementById('clientIdInput').value = clientId;
+}
+
+function disconnectSpotify() {
+  spotifyToken = null;
+  sessionStorage.removeItem('wu_tok');
+  sessionStorage.removeItem('wu_refresh');
+  sessionStorage.removeItem('wu_expiry');
+  // Show full connect UI again
+  document.getElementById('connectBtn').style.display = 'flex';
+  document.getElementById('connectedBadge').style.display = 'none';
+  document.getElementById('clientIdInput').style.display = 'block';
+  document.getElementById('clientIdInput').disabled = false;
+  // Keep client ID pre-filled so they just tap Connect
+  if (clientId) document.getElementById('clientIdInput').value = clientId;
+  showToast('Session expired — just tap Connect again!', '');
 }
 
 // ── Voice style ──────────────────────────────
