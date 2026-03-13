@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>⚾ Walk-Up Music</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --bg: #080c14;
+  --surface: #0f1824;
+  --card: #141f2e;
+  --card2: #1a2840;
+  --border: rgba(255,255,255,0.08);
+  --border-accent: rgba(30,215,96,0.35);
+  --green: #1ed760;
+  --green-dim: #17a349;
+  --green-glow: rgba(30,215,96,0.12);
+  --gold: #f0c040;
+  --red: #ff4545;
+  --chalk: #e8edf5;
+  --muted: #6b7a8d;
+  --muted2: #3a4a5a;
+  --white: #ffffff;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { background: var(--bg); color: var(--chalk); font-family: 'Outfit', sans-serif; overflow-x: hidden; }
+
+.field-lights {
+  position: fixed; top: 0; left: 0; right: 0; height: 260px; pointer-events: none; z-index: 0;
+  background: radial-gradient(ellipse 350px 200px at 25% 0%, rgba(30,215,96,0.055) 0%, transparent 70%),
+              radial-gradient(ellipse 350px 200px at 75% 0%, rgba(240,192,64,0.04) 0%, transparent 70%);
+}
+.grid-bg {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background-image: linear-gradient(rgba(255,255,255,0.016) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255,255,255,0.016) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+
+/* ── SCREENS ── */
+.screen { display: none; position: relative; z-index: 1; }
+.screen.active { display: block; }
+
+/* ── SETUP ── */
+.setup-wrap { min-height: 100vh; padding: 0 16px 110px; max-width: 600px; margin: 0 auto; }
+
+.logo-bar { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 34px 0 26px; }
+.logo-icon {
+  width: 46px; height: 46px; background: linear-gradient(135deg, var(--green), #0ea83a);
+  border-radius: 13px; display: flex; align-items: center; justify-content: center;
+  font-size: 22px; box-shadow: 0 4px 20px rgba(30,215,96,0.28);
+}
+.logo-text { font-family: 'Bebas Neue', sans-serif; font-size: 34px; letter-spacing: 2px; line-height: 1; }
+.logo-text span { color: var(--green); }
+
+/* Spotify setup card */
+.spotify-card {
+  background: var(--card); border: 1px solid var(--border-accent); border-radius: 14px;
+  padding: 16px; margin-bottom: 20px;
+}
+.spotify-card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.spotify-card-head .icon { font-size: 22px; }
+.spotify-card-head .title { font-weight: 700; font-size: 14px; color: var(--green); }
+.spotify-card-head .sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.step-list { font-size: 12px; color: var(--muted); line-height: 1.9; margin-bottom: 12px; counter-reset: steps; }
+.step-list li { list-style: none; padding-left: 20px; position: relative; counter-increment: steps; }
+.step-list li::before { content: counter(steps); position: absolute; left: 0; color: var(--green); font-weight: 700; }
+.step-list code { background: var(--muted2); border-radius: 4px; padding: 1px 6px; font-size: 11px; color: var(--chalk); }
+
+/* Section labels */
+.sec-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--green); margin-bottom: 10px; display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: rgba(30,215,96,0.2); }
+.section { margin-bottom: 22px; }
+
+/* Fields */
+.field {
+  background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+  color: var(--chalk); font-family: 'Outfit', sans-serif; font-size: 14px;
+  padding: 11px 14px; outline: none; transition: border-color 0.2s, box-shadow 0.2s; width: 100%;
+}
+.field:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(30,215,96,0.08); }
+.field::placeholder { color: var(--muted2); }
+.field-mono { font-family: monospace; font-size: 13px; }
+.mb8 { margin-bottom: 8px; }
+
+.btn-green {
+  width: 100%; background: var(--green); color: #000; font-family: 'Outfit', sans-serif;
+  font-weight: 700; font-size: 14px; border: none; border-radius: 10px; padding: 12px;
+  cursor: pointer; transition: all 0.18s; display: flex; align-items: center; justify-content: center; gap: 8px;
+  margin-top: 8px;
+}
+.btn-green:hover { background: #26f070; }
+.btn-green:disabled { background: var(--muted2); color: var(--muted); cursor: not-allowed; }
+
+.connected-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(30,215,96,0.1); border: 1px solid var(--border-accent);
+  border-radius: 20px; padding: 5px 14px; font-size: 12px; font-weight: 600; color: var(--green);
+  margin-top: 10px;
+}
+
+/* Voice chips */
+.voice-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.voice-chip {
+  background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+  padding: 11px 6px; text-align: center; cursor: pointer; transition: all 0.18s; user-select: none;
+}
+.voice-chip:active { transform: scale(0.96); }
+.voice-chip.active { border-color: var(--green); background: rgba(30,215,96,0.08); }
+.vc-emoji { font-size: 20px; display: block; margin-bottom: 4px; }
+.vc-label { font-size: 11px; font-weight: 600; color: var(--muted); }
+.voice-chip.active .vc-label { color: var(--green); }
+
+/* Player cards */
+.player-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+  padding: 14px; margin-bottom: 12px; animation: slideIn 0.22s ease-out;
+  transition: border-color 0.2s;
+}
+.player-card:focus-within { border-color: rgba(30,215,96,0.22); }
+@keyframes slideIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+.pc-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.pc-num {
+  background: var(--green); color: #000; font-family: 'Bebas Neue', sans-serif; font-size: 20px;
+  min-width: 38px; height: 38px; border-radius: 9px; display: flex; align-items: center;
+  justify-content: center; flex-shrink: 0;
+}
+.pc-name { font-weight: 600; font-size: 14px; flex: 1; }
+.pc-name.ph { color: var(--muted); font-weight: 400; font-style: italic; font-size: 13px; }
+.pc-remove { background: none; border: none; color: var(--muted2); font-size: 16px; cursor: pointer; padding: 4px 6px; border-radius: 6px; transition: color 0.15s; line-height: 1; }
+.pc-remove:hover { color: var(--red); }
+
+.pc-row1 { display: grid; grid-template-columns: 70px 1fr; gap: 8px; margin-bottom: 8px; }
+
+/* Phonetic toggle */
+.phonetic-toggle { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; cursor: pointer; user-select: none; width: fit-content; }
+.phonetic-toggle input { display: none; }
+.pt-track { width: 32px; height: 18px; background: var(--muted2); border-radius: 9px; position: relative; transition: background 0.2s; flex-shrink: 0; }
+.phonetic-toggle input:checked ~ .pt-track { background: var(--green); }
+.pt-thumb { position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; background: white; border-radius: 50%; transition: left 0.2s; }
+.phonetic-toggle input:checked ~ .pt-track .pt-thumb { left: 16px; }
+.pt-label { font-size: 11px; color: var(--muted); font-weight: 500; }
+
+.phonetic-wrap { display: none; margin-bottom: 8px; }
+.phonetic-wrap.show { display: block; }
+.phonetic-hint { font-size: 10px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+
+/* Song search */
+.song-search-wrap { position: relative; }
+.song-results {
+  position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+  background: var(--card2); border: 1px solid var(--border); border-radius: 10px;
+  z-index: 50; box-shadow: 0 8px 32px rgba(0,0,0,0.5); max-height: 220px; overflow-y: auto; display: none;
+}
+.song-result {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px; cursor: pointer;
+  transition: background 0.15s; border-bottom: 1px solid var(--border);
+}
+.song-result:last-child { border-bottom: none; }
+.song-result:hover { background: rgba(30,215,96,0.07); }
+.song-result img { width: 38px; height: 38px; border-radius: 5px; object-fit: cover; flex-shrink: 0; }
+.song-result-info { flex: 1; min-width: 0; }
+.sr-title { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sr-artist { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.song-selected {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(30,215,96,0.07); border: 1px solid var(--border-accent);
+  border-radius: 9px; padding: 8px 10px; margin-top: 6px;
+}
+.song-selected img { width: 34px; height: 34px; border-radius: 5px; flex-shrink: 0; }
+.ss-info { flex: 1; min-width: 0; }
+.ss-title { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ss-artist { font-size: 10px; color: var(--muted); }
+.ss-clear { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 15px; padding: 3px; }
+
+.seek-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.seek-row label { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.seek-input {
+  width: 62px; background: var(--card); border: 1px solid var(--border); border-radius: 7px;
+  color: var(--chalk); font-family: 'Outfit', sans-serif; font-size: 13px; padding: 6px 8px;
+  outline: none; text-align: center;
+}
+.seek-input:focus { border-color: var(--green); }
+.seek-hint { font-size: 10px; color: var(--muted); }
+.no-spotify-hint { font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+/* Add player */
+.add-btn {
+  width: 100%; background: transparent; border: 1px dashed var(--muted2);
+  border-radius: 12px; padding: 14px; color: var(--muted); font-family: 'Outfit', sans-serif;
+  font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.18s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.add-btn:hover { border-color: var(--green); color: var(--green); background: var(--green-glow); }
+
+/* Fixed bottom bar */
+.bottom-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  padding: 14px 16px; background: linear-gradient(transparent, var(--bg) 28%); z-index: 10;
+}
+.game-btn {
+  width: 100%; max-width: 600px; margin: 0 auto; display: flex;
+  align-items: center; justify-content: center; gap: 10px;
+  background: var(--green); color: #000; font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px; letter-spacing: 2px; border: none; border-radius: 14px; padding: 16px;
+  cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 24px rgba(30,215,96,0.3);
+}
+.game-btn:hover { background: #26f070; transform: translateY(-1px); }
+.game-btn:active { transform: translateY(0); }
+.game-btn:disabled { background: var(--muted2); color: var(--muted); box-shadow: none; cursor: not-allowed; transform: none; }
+
+/* ── GAME SCREEN ── */
+.game-wrap { min-height: 100vh; max-width: 600px; margin: 0 auto; padding: 0 16px 30px; }
+.game-topbar { display: flex; align-items: center; padding: 18px 0 14px; gap: 12px; }
+.back-btn {
+  background: var(--card); border: 1px solid var(--border); color: var(--chalk);
+  font-family: 'Outfit', sans-serif; font-size: 13px; border-radius: 8px; padding: 8px 14px;
+  cursor: pointer; transition: all 0.15s;
+}
+.back-btn:hover { border-color: var(--green); color: var(--green); }
+.game-team { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 2px; flex: 1; text-align: center; color: var(--green); }
+.inning-badge {
+  background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+  padding: 6px 12px; font-size: 10px; font-weight: 600; color: var(--muted); letter-spacing: 1px;
+}
+
+/* Now playing */
+.np-card {
+  background: linear-gradient(145deg, var(--card), var(--card2));
+  border: 1px solid var(--border-accent); border-radius: 20px; padding: 24px 20px;
+  margin-bottom: 20px; text-align: center; position: relative; overflow: hidden;
+  box-shadow: 0 0 60px rgba(30,215,96,0.07);
+}
+.np-card::before {
+  content: ''; position: absolute; inset: -1px; border-radius: 20px;
+  background: linear-gradient(135deg, rgba(30,215,96,0.12), transparent, rgba(240,192,64,0.06));
+  pointer-events: none;
+}
+.np-badge {
+  font-size: 9px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase;
+  color: var(--green); margin-bottom: 16px;
+}
+.np-album {
+  width: 108px; height: 108px; border-radius: 12px; margin: 0 auto 16px; object-fit: cover;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5); border: 2px solid rgba(30,215,96,0.2); display: block;
+}
+.np-album-ph {
+  width: 108px; height: 108px; border-radius: 12px; background: var(--card2); border: 2px solid var(--border);
+  margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; font-size: 42px;
+}
+.np-num {
+  font-family: 'Bebas Neue', sans-serif; font-size: 66px; line-height: 1;
+  color: var(--green); text-shadow: 0 0 40px rgba(30,215,96,0.45); margin-bottom: 2px;
+}
+.np-name { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 2px; color: var(--white); margin-bottom: 6px; }
+.np-song { font-size: 12px; color: var(--muted); margin-bottom: 22px; }
+.np-song strong { color: var(--chalk); font-weight: 600; }
+
+.play-btn {
+  width: 72px; height: 72px; background: var(--green); border: none; border-radius: 50%;
+  font-size: 26px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  margin: 0 auto; transition: all 0.2s; box-shadow: 0 4px 24px rgba(30,215,96,0.4); position: relative;
+}
+.play-btn:hover { transform: scale(1.07); }
+.play-btn:active { transform: scale(0.97); }
+.play-btn.playing::before, .play-btn.playing::after {
+  content: ''; position: absolute; inset: 0; border-radius: 50%;
+  border: 2px solid var(--green); animation: ring 1.8s ease-out infinite;
+}
+.play-btn.playing::after { animation-delay: 0.9s; }
+@keyframes ring { 0% { transform:scale(1); opacity:0.6; } 100% { transform:scale(2.4); opacity:0; } }
+
+.play-status { font-size: 11px; color: var(--muted); margin-top: 12px; min-height: 16px; }
+.play-status.on { color: var(--green); font-weight: 600; }
+
+/* Roster in game */
+.roster-label { font-size: 10px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+.roster-item {
+  display: flex; align-items: center; gap: 12px; background: var(--card);
+  border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin-bottom: 8px;
+  cursor: pointer; transition: all 0.18s; user-select: none;
+}
+.roster-item:active { transform: scale(0.98); }
+.roster-item:hover { border-color: rgba(30,215,96,0.2); background: rgba(30,215,96,0.04); }
+.roster-item.cur { border-color: var(--green); background: rgba(30,215,96,0.08); }
+.ri-num {
+  background: var(--card2); color: var(--green); font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px; width: 36px; height: 36px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.roster-item.cur .ri-num { background: var(--green); color: #000; }
+.ri-info { flex: 1; min-width: 0; }
+.ri-name { font-weight: 600; font-size: 14px; }
+.ri-song { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+.ri-arrow { color: var(--muted); font-size: 16px; }
+.roster-item.cur .ri-arrow { color: var(--green); }
+
+/* Toast */
+.toast {
+  position: fixed; bottom: 90px; left: 50%;
+  transform: translateX(-50%) translateY(16px);
+  background: var(--card2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px 18px; font-size: 13px;
+  z-index: 200; opacity: 0; transition: all 0.25s; white-space: nowrap; pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.success { border-color: var(--green); color: var(--green); }
+.toast.error { border-color: var(--red); color: var(--red); }
+
+.spinner {
+  width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.2);
+  border-top-color: currentColor; border-radius: 50%; animation: spin 0.65s linear infinite; display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="field-lights"></div>
+<div class="grid-bg"></div>
+
+<!-- ══════════════════════════════════════════ -->
+<!--  SETUP SCREEN                             -->
+<!-- ══════════════════════════════════════════ -->
+<div class="screen active" id="setupScreen">
+  <div class="setup-wrap">
+
+    <div class="logo-bar">
+      <div class="logo-icon">⚾</div>
+      <div class="logo-text">WALK<span>-UP</span></div>
+    </div>
+
+    <!-- Spotify Setup -->
+    <div class="section">
+      <div class="sec-label">Spotify Setup</div>
+      <div class="spotify-card">
+        <div class="spotify-card-head">
+          <div class="icon">🎵</div>
+          <div>
+            <div class="title">Connect Your Spotify</div>
+            <div class="sub">One-time setup — takes about 5 minutes</div>
+          </div>
+        </div>
+        <ol class="step-list">
+          <li>Go to <strong>developer.spotify.com</strong> and log in</li>
+          <li>Click <strong>Create App</strong></li>
+          <li>App name: anything. Redirect URI: <code id="redirectUriDisplay">loading...</code></li>
+          <li>Save, then go to <strong>Settings</strong> → copy your <strong>Client ID</strong></li>
+          <li>Paste it below and tap Connect</li>
+        </ol>
+        <input class="field field-mono mb8" id="clientIdInput" placeholder="Paste Client ID here..." spellcheck="false" autocomplete="off">
+        <button class="btn-green" id="connectBtn" onclick="connectSpotify()">🎵 Connect to Spotify</button>
+        <div id="connectedBadge" style="display:none; margin-top:10px">
+          <span class="connected-badge">✓ Spotify Connected — Ready to play!</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Team Info -->
+    <div class="section">
+      <div class="sec-label">Team Info</div>
+      <input class="field mb8" id="teamName" placeholder="Team name (e.g. Tigers, Marlins...)">
+      <input class="field" id="announcePhrase" placeholder='Announcer phrase' value="Now batting">
+    </div>
+
+    <!-- Announcer Style -->
+    <div class="section">
+      <div class="sec-label">Announcer Style</div>
+      <div class="voice-grid" id="voiceGrid">
+        <div class="voice-chip active" data-style="hype"><span class="vc-emoji">🔥</span><span class="vc-label">Hype</span></div>
+        <div class="voice-chip" data-style="classic"><span class="vc-emoji">🎙️</span><span class="vc-label">Classic</span></div>
+        <div class="voice-chip" data-style="fun"><span class="vc-emoji">🎉</span><span class="vc-label">Fun</span></div>
+      </div>
+    </div>
+
+    <!-- Roster -->
+    <div class="section">
+      <div class="sec-label">Roster</div>
+      <div id="playerList"></div>
+      <button class="add-btn" onclick="addPlayer()">＋ Add Player</button>
+    </div>
+
+    <div style="height:90px"></div>
+  </div>
+
+  <div class="bottom-bar">
+    <button class="game-btn" onclick="startGame()">▶ &nbsp; START GAME DAY</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!--  GAME SCREEN                              -->
+<!-- ══════════════════════════════════════════ -->
+<div class="screen" id="gameScreen">
+  <div class="game-wrap">
+    <div class="game-topbar">
+      <button class="back-btn" onclick="goBack()">← Edit Roster</button>
+      <div class="game-team" id="gameTeamName">TIGERS</div>
+      <div class="inning-badge">GAME DAY</div>
+    </div>
+
+    <!-- Now Playing Card -->
+    <div class="np-card">
+      <div class="np-badge">⚾ &nbsp; TAP A PLAYER BELOW TO SELECT</div>
+      <div id="npAlbum" class="np-album-ph">⚾</div>
+      <div class="np-num" id="npNum">—</div>
+      <div class="np-name" id="npName">SELECT A PLAYER</div>
+      <div class="np-song" id="npSong">Choose from the roster below</div>
+      <button class="play-btn" id="mainPlayBtn" onclick="triggerWalkup()">▶</button>
+      <div class="play-status" id="playStatus">Ready</div>
+    </div>
+
+    <div class="roster-label">BATTING ORDER — TAP TO SELECT</div>
+    <div id="gameRoster"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── State ───────────────────────────────────
+let players = [], idCtr = 0, style = 'hype';
+let spotifyToken = null, clientId = '';
+let currentPlayer = null, playing = false;
+let searchTimers = {};
+
+// Set redirect URI display
+const REDIRECT_URI = "https://SamSneed82.github.io/walkup/";
+const el = document.getElementById('redirectUriDisplay');
+if (el) el.textContent = REDIRECT_URI;
+
+// Restore session
+try {
+  const d = JSON.parse(sessionStorage.getItem('wu') || '{}');
+  if (d.players?.length) players = d.players;
+  if (d.style) style = d.style;
+  if (d.clientId) { clientId = d.clientId; document.getElementById('clientIdInput').value = clientId; }
+  if (d.teamName) document.getElementById('teamName').value = d.teamName;
+  if (d.phrase) document.getElementById('announcePhrase').value = d.phrase;
+  if (d.idCtr) idCtr = d.idCtr;
+} catch(e) {}
+
+checkToken();
+if (!players.length) { addPlayer(); addPlayer(); } else renderPlayers();
+syncStyleChips();
+
+// ── Spotify OAuth ────────────────────────────
+function connectSpotify() {
+  clientId = document.getElementById('clientIdInput').value.trim();
+  if (!clientId) { showToast('Paste your Client ID first', 'error'); return; }
+  save();
+  const scopes = 'streaming user-read-email user-read-private user-modify-playback-state user-read-playback-state';
+  const url = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(scopes)}`;
+  window.location = url;
+}
+
+function checkToken() {
+  const hash = window.location.hash;
+  if (hash) {
+    const p = new URLSearchParams(hash.slice(1));
+    const t = p.get('access_token');
+    if (t) {
+      spotifyToken = t;
+      sessionStorage.setItem('wu_tok', t);
+      window.history.replaceState({}, '', window.location.pathname);
+      markConnected();
+      showToast('Spotify connected! ✓', 'success');
+      return;
+    }
+  }
+  const saved = sessionStorage.getItem('wu_tok');
+  if (saved) { spotifyToken = saved; markConnected(); }
+}
+
+function markConnected() {
+  document.getElementById('connectBtn').style.display = 'none';
+  document.getElementById('connectedBadge').style.display = 'block';
+}
+
+// ── Voice style ──────────────────────────────
+document.getElementById('voiceGrid').addEventListener('click', e => {
+  const chip = e.target.closest('.voice-chip');
+  if (!chip) return;
+  style = chip.dataset.style;
+  syncStyleChips();
+  save();
+});
+
+function syncStyleChips() {
+  document.querySelectorAll('.voice-chip').forEach(c => c.classList.toggle('active', c.dataset.style === style));
+}
+
+// ── Players ──────────────────────────────────
+function addPlayer() {
+  players.push({ id: ++idCtr, number:'', name:'', phonetic:'', usePhonetic:false, trackUri:'', trackName:'', trackArtist:'', trackImg:'', seekSec:0 });
+  renderPlayers(); save();
+}
+
+function removePlayer(id) {
+  players = players.filter(p => p.id !== id);
+  renderPlayers(); save();
+}
+
+function setField(id, key, val) {
+  const p = players.find(p => p.id === id);
+  if (!p) return;
+  p[key] = val;
+  if (key === 'number' || key === 'name') refreshHeader(id);
+  save();
+}
+
+function refreshHeader(id) {
+  const p = players.find(p => p.id === id);
+  const card = document.getElementById(`pc-${id}`);
+  if (!card || !p) return;
+  card.querySelector('.pc-num').textContent = p.number || '#';
+  const n = card.querySelector('.pc-name');
+  n.textContent = p.name || 'Enter player name';
+  n.className = `pc-name${p.name ? '' : ' ph'}`;
+}
+
+function togglePhonetic(id) {
+  const p = players.find(p => p.id === id);
+  if (!p) return;
+  p.usePhonetic = !p.usePhonetic;
+  const w = document.getElementById(`phwrap-${id}`);
+  if (w) w.className = `phonetic-wrap${p.usePhonetic ? ' show' : ''}`;
+  save();
+}
+
+function clearSong(id) {
+  const p = players.find(p => p.id === id);
+  if (!p) return;
+  Object.assign(p, { trackUri:'', trackName:'', trackArtist:'', trackImg:'', seekSec:0 });
+  renderPlayers(); save();
+}
+
+function selectSong(id, uri, name, artist, img) {
+  const p = players.find(p => p.id === id);
+  if (!p) return;
+  Object.assign(p, { trackUri: uri, trackName: name, trackArtist: artist, trackImg: img, seekSec: 0 });
+  renderPlayers(); save();
+}
+
+function renderPlayers() {
+  const list = document.getElementById('playerList');
+  list.innerHTML = '';
+  players.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'player-card';
+    div.id = `pc-${p.id}`;
+
+    const songSection = p.trackUri ? `
+      <div class="song-selected">
+        ${p.trackImg ? `<img src="${p.trackImg}" alt="">` : ''}
+        <div class="ss-info">
+          <div class="ss-title">${esc(p.trackName)}</div>
+          <div class="ss-artist">${esc(p.trackArtist)}</div>
+        </div>
+        <button class="ss-clear" onclick="clearSong(${p.id})">✕</button>
+      </div>
+      <div class="seek-row">
+        <label>Start at:</label>
+        <input class="seek-input" type="number" min="0" max="600" value="${p.seekSec || 0}"
+          oninput="setField(${p.id},'seekSec',parseInt(this.value)||0)">
+        <span class="seek-hint">seconds in (to skip intros)</span>
+      </div>
+    ` : `
+      <div class="song-search-wrap">
+        <input class="field" id="si-${p.id}" placeholder="🔍 Search walk-up song on Spotify..."
+          oninput="searchSong(${p.id},this.value)" style="font-size:13px">
+        <div class="song-results" id="sr-${p.id}"></div>
+        ${!spotifyToken ? `<div class="no-spotify-hint">⚠ Connect Spotify above to search songs</div>` : ''}
+      </div>
+    `;
+
+    div.innerHTML = `
+      <div class="pc-header">
+        <div class="pc-num">${p.number || '#'}</div>
+        <div class="pc-name${p.name ? '' : ' ph'}">${p.name || 'Enter player name'}</div>
+        <button class="pc-remove" onclick="removePlayer(${p.id})">✕</button>
+      </div>
+      <div class="pc-row1">
+        <input class="field" placeholder="#" maxlength="3" value="${p.number}"
+          oninput="setField(${p.id},'number',this.value)"
+          style="text-align:center;font-family:'Bebas Neue',sans-serif;font-size:20px;padding:8px 4px">
+        <input class="field" placeholder="Player full name" value="${p.name}"
+          oninput="setField(${p.id},'name',this.value)">
+      </div>
+      <label class="phonetic-toggle" onclick="togglePhonetic(${p.id})">
+        <input type="checkbox" ${p.usePhonetic ? 'checked' : ''}>
+        <div class="pt-track"><div class="pt-thumb"></div></div>
+        <span class="pt-label">Custom pronunciation</span>
+      </label>
+      <div class="phonetic-wrap${p.usePhonetic ? ' show' : ''}" id="phwrap-${p.id}">
+        <input class="field" placeholder='How to say it, e.g. "juh-VAN-tay" or "SMITH-er-son"'
+          value="${p.phonetic}" oninput="setField(${p.id},'phonetic',this.value)">
+        <div class="phonetic-hint">Spell it out phonetically. Use CAPS for stressed syllables. The announcer will read exactly what you type here.</div>
+      </div>
+      ${songSection}
+    `;
+    list.appendChild(div);
+  });
+}
+
+// ── Spotify Search ───────────────────────────
+async function searchSong(id, query) {
+  clearTimeout(searchTimers[id]);
+  const res = document.getElementById(`sr-${id}`);
+  if (!res) return;
+  if (!query.trim()) { res.style.display = 'none'; return; }
+  if (!spotifyToken) { showToast('Connect Spotify first!', 'error'); return; }
+
+  searchTimers[id] = setTimeout(async () => {
+    res.style.display = 'block';
+    res.innerHTML = `<div style="padding:14px;text-align:center;color:var(--muted)"><span class="spinner"></span></div>`;
+    try {
+      const r = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=6`, {
+        headers: { 'Authorization': `Bearer ${spotifyToken}` }
+      });
+      if (r.status === 401) { spotifyToken = null; sessionStorage.removeItem('wu_tok'); showToast('Spotify expired — reconnect', 'error'); res.style.display='none'; return; }
+      const data = await r.json();
+      const tracks = data.tracks?.items || [];
+      if (!tracks.length) { res.innerHTML = `<div style="padding:14px;text-align:center;color:var(--muted);font-size:13px">No results</div>`; return; }
+      res.innerHTML = tracks.map(t => {
+        const imgUrl = t.album.images[0]?.url || '';
+        const imgHtml = imgUrl ? `<img src="${imgUrl}" alt="">` : `<div style="width:38px;height:38px;background:var(--muted2);border-radius:5px;flex-shrink:0"></div>`;
+        const artists = t.artists.map(a => a.name).join(', ');
+        return `<div class="song-result" onclick='selectSong(${id},${JSON.stringify(t.uri)},${JSON.stringify(t.name)},${JSON.stringify(artists)},${JSON.stringify(imgUrl)})'>
+          ${imgHtml}
+          <div class="song-result-info"><div class="sr-title">${esc(t.name)}</div><div class="sr-artist">${esc(artists)}</div></div>
+        </div>`;
+      }).join('');
+    } catch(e) {
+      res.innerHTML = `<div style="padding:14px;text-align:center;color:var(--red);font-size:13px">Search failed</div>`;
+    }
+  }, 380);
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.song-search-wrap')) {
+    document.querySelectorAll('.song-results').forEach(r => r.style.display = 'none');
+  }
+});
+
+// ── Game Screen ──────────────────────────────
+function startGame() {
+  if (!players.length) { showToast('Add at least one player!', 'error'); return; }
+  if (players.some(p => !p.name || !p.number)) { showToast('Fill name & number for all players', 'error'); return; }
+  if (!spotifyToken) { showToast('Connect Spotify first!', 'error'); return; }
+  save();
+  document.getElementById('gameTeamName').textContent = (document.getElementById('teamName').value || 'GAME DAY').toUpperCase();
+  renderGameRoster();
+  showScreen('gameScreen');
+}
+
+function goBack() {
+  stopAll();
+  showScreen('setupScreen');
+}
+
+function renderGameRoster() {
+  const list = document.getElementById('gameRoster');
+  list.innerHTML = '';
+  players.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'roster-item';
+    div.id = `ri-${p.id}`;
+    div.onclick = () => pickPlayer(p.id);
+    div.innerHTML = `
+      <div class="ri-num">${p.number}</div>
+      <div class="ri-info">
+        <div class="ri-name">${esc(p.name)}</div>
+        <div class="ri-song">${p.trackName ? `🎵 ${esc(p.trackName)}` : '⚠ No song selected'}</div>
+      </div>
+      <div class="ri-arrow">▶</div>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function pickPlayer(id) {
+  stopAll();
+  currentPlayer = players.find(p => p.id === id);
+  if (!currentPlayer) return;
+  document.querySelectorAll('.roster-item').forEach(r => r.classList.remove('cur'));
+  document.getElementById(`ri-${id}`)?.classList.add('cur');
+
+  document.getElementById('npNum').textContent = currentPlayer.number;
+  document.getElementById('npName').textContent = currentPlayer.name.toUpperCase();
+  document.getElementById('npSong').innerHTML = currentPlayer.trackName
+    ? `<strong>${esc(currentPlayer.trackName)}</strong> · ${esc(currentPlayer.trackArtist)}`
+    : '⚠ No song selected for this player';
+
+  // Album art
+  const albumContainer = document.getElementById('npAlbum');
+  if (currentPlayer.trackImg) {
+    const img = document.createElement('img');
+    img.className = 'np-album';
+    img.id = 'npAlbum';
+    img.src = currentPlayer.trackImg;
+    img.alt = '';
+    albumContainer.replaceWith(img);
+  } else {
+    const ph = document.createElement('div');
+    ph.className = 'np-album-ph';
+    ph.id = 'npAlbum';
+    ph.textContent = '⚾';
+    albumContainer.replaceWith(ph);
+  }
+
+  setStatus('Tap ▶ to announce!', false);
+  document.getElementById('mainPlayBtn').className = 'play-btn';
+  document.getElementById('mainPlayBtn').textContent = '▶';
+}
+
+async function triggerWalkup() {
+  if (!currentPlayer) { showToast('Select a player first!', 'error'); return; }
+  if (playing) { stopAll(); return; }
+
+  playing = true;
+  const btn = document.getElementById('mainPlayBtn');
+  btn.className = 'play-btn playing';
+  btn.textContent = '■';
+
+  try {
+    const phrase = document.getElementById('announcePhrase').value || 'Now batting';
+    const spokenName = (currentPlayer.usePhonetic && currentPlayer.phonetic) ? currentPlayer.phonetic : currentPlayer.name;
+    const script = buildScript(phrase, currentPlayer.number, spokenName, style);
+
+    setStatus('📢 Announcing...', true);
+    await speak(script, style);
+    if (!playing) return;
+
+    if (currentPlayer.trackUri) {
+      setStatus('🎵 Starting music on Spotify...', true);
+      await playOnSpotify(currentPlayer.trackUri, currentPlayer.seekSec || 0);
+      setStatus('🎵 Walk-up music playing! Tap ■ to stop.', true);
+    } else {
+      setStatus('Done! (No song selected)', false);
+      playing = false;
+      btn.className = 'play-btn';
+      btn.textContent = '▶';
+    }
+  } catch(err) {
+    showToast(err.message || 'Something went wrong', 'error');
+    stopAll();
+  }
+}
+
+function buildScript(phrase, num, name, s) {
+  const map = {
+    hype: [
+      `${phrase}... Number ${num}... ${name}! Let's go!`,
+      `Make some noise for Number ${num}... ${name}!`,
+      `Up to the plate... Number ${num}... ${name}! Let's do this!`
+    ],
+    classic: [
+      `${phrase}... Number ${num}... ${name}.`,
+      `Now batting for the team... Number ${num}... ${name}.`,
+      `${phrase}... wearing Number ${num}... ${name}.`
+    ],
+    fun: [
+      `Oh yeah! Here comes Number ${num}, ${name}!`,
+      `Watch out, it's Number ${num}... ${name} is ready!`,
+      `Number ${num}! ${name}! It is game time!`
+    ]
+  };
+  const opts = map[s] || map.classic;
+  return opts[Math.floor(Math.random() * opts.length)];
+}
+
+function speak(text, s) {
+  return new Promise(resolve => {
+    if (!window.speechSynthesis) { resolve(); return; }
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    const cfg = { hype:{rate:1.05,pitch:1.15}, classic:{rate:0.9,pitch:1.0}, fun:{rate:1.1,pitch:1.3} };
+    const c = cfg[s] || cfg.classic;
+    u.rate = c.rate; u.pitch = c.pitch; u.volume = 1;
+    const voices = speechSynthesis.getVoices();
+    const v = voices.find(v => v.lang.startsWith('en-US') && /daniel|alex|fred|david|mark|tom|oliver/i.test(v.name))
+           || voices.find(v => v.lang.startsWith('en-US'))
+           || voices.find(v => v.lang.startsWith('en'))
+           || voices[0];
+    if (v) u.voice = v;
+    u.onend = u.onerror = () => resolve();
+    if (!voices.length) {
+      speechSynthesis.onvoiceschanged = () => {
+        const v2 = speechSynthesis.getVoices();
+        u.voice = v2.find(v => v.lang.startsWith('en-US')) || v2[0];
+        speechSynthesis.speak(u);
+      };
+    } else { speechSynthesis.speak(u); }
+  });
+}
+
+async function playOnSpotify(uri, seekSec) {
+  if (!spotifyToken) throw new Error('Not connected to Spotify');
+
+  const devR = await fetch('https://api.spotify.com/v1/me/player/devices', {
+    headers: { 'Authorization': `Bearer ${spotifyToken}` }
+  });
+  const devD = await devR.json();
+  const devs = devD.devices || [];
+  const dev = devs.find(d => d.is_active) || devs[0];
+
+  if (!dev) throw new Error('No Spotify device found — open Spotify on your phone first, then try again!');
+
+  const r = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${dev.id}`, {
+    method: 'PUT',
+    headers: { 'Authorization': `Bearer ${spotifyToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ uris: [uri], position_ms: (seekSec || 0) * 1000 })
+  });
+
+  if (r.status === 401) { spotifyToken = null; sessionStorage.removeItem('wu_tok'); throw new Error('Spotify session expired — reconnect'); }
+  if (r.status === 403) throw new Error('Spotify Premium required for playback control');
+  if (r.status === 404) throw new Error('No active Spotify device — open Spotify on your phone first!');
+}
+
+function stopAll() {
+  window.speechSynthesis?.cancel();
+  playing = false;
+  const btn = document.getElementById('mainPlayBtn');
+  if (btn) { btn.className = 'play-btn'; btn.textContent = '▶'; }
+  setStatus('Ready', false);
+}
+
+function setStatus(txt, on) {
+  const el = document.getElementById('playStatus');
+  if (el) { el.textContent = txt; el.className = `play-status${on ? ' on' : ''}`; }
+}
+
+// ── Utils ────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function save() {
+  try {
+    sessionStorage.setItem('wu', JSON.stringify({
+      players, style, idCtr,
+      clientId: document.getElementById('clientIdInput').value,
+      teamName: document.getElementById('teamName').value,
+      phrase: document.getElementById('announcePhrase').value
+    }));
+  } catch(e) {}
+}
+
+let toastT;
+function showToast(msg, type='') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = `toast ${type} show`;
+  clearTimeout(toastT); toastT = setTimeout(() => el.className = 'toast', 3800);
+}
+
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+document.getElementById('teamName').addEventListener('input', save);
+document.getElementById('announcePhrase').addEventListener('input', save);
+document.getElementById('clientIdInput').addEventListener('input', () => { clientId = document.getElementById('clientIdInput').value; save(); });
+</script>
+</body>
+</html>
