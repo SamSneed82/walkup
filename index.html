@@ -507,7 +507,7 @@ html, body { background: var(--bg); color: var(--chalk); font-family: 'Outfit', 
     <div class="game-topbar">
       <button class="back-btn" onclick="goBack()">← Edit Roster</button>
       <div class="game-team" id="gameTeamName">TIGERS</div>
-      <div class="inning-badge">GAME DAY</div>
+      <div class="inning-badge" onclick="pickDevice()" style="cursor:pointer;" title="Choose Spotify device">📱 Device</div>
     </div>
 
     <!-- Now Playing Card -->
@@ -527,9 +527,10 @@ html, body { background: var(--bg); color: var(--chalk); font-family: 'Outfit', 
 </button>
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
   <div class="roster-label" style="margin-bottom:0">BATTING ORDER — TAP ANY PLAYER</div>
-  <button onclick="precacheVoiceovers()" style="background:rgba(30,215,96,0.1);border:1px solid rgba(30,215,96,0.3);color:var(--green);font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;border-radius:8px;padding:6px 12px;cursor:pointer;">
-    ⚡ Pre-load
-  </button>
+  <div style="display:flex;gap:6px;">
+    <button onclick="showDevicePicker()" style="background:rgba(30,215,96,0.1);border:1px solid rgba(30,215,96,0.3);color:var(--green);font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;border-radius:8px;padding:6px 10px;cursor:pointer;">📱 Device</button>
+    <button onclick="precacheVoiceovers()" style="background:rgba(30,215,96,0.1);border:1px solid rgba(30,215,96,0.3);color:var(--green);font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;border-radius:8px;padding:6px 10px;cursor:pointer;">⚡ Pre-load</button>
+  </div>
 </div>
     <div id="gameRoster"></div>
   </div>
@@ -1146,7 +1147,7 @@ function buildScript(phrase, num, name, s) {
 const voiceCache = {};
 
 // Charlie - energetic sports announcer voice
-const ELEVEN_VOICE_ID = 'pNInz6obpgDQGcFmaJgB'; // Adam - deep American male
+const ELEVEN_VOICE_ID = 'JBFqnCBsd6RMkjVDRZzb'; // George - deep powerful American male
 const ELEVEN_API_KEY = 'sk_a64ce304e3d5144d74b64a89985c04f1b647dd8fb56f268b';
 
 async function speak(text, s) {
@@ -1254,12 +1255,14 @@ async function playOnSpotify(uri, seekSec) {
     throw new Error('❌ No Spotify device found. Open the Spotify app on your phone, play any song briefly, then try again.');
   }
 
-  // Always prefer smartphone/phone over everything else (for game day use)
-  // Only fall back to active non-phone device if no phone found at all
-  const phoneDev = devs.find(d => /smartphone|phone|iphone|android/i.test(d.type));
-  const activeDev = devs.find(d => d.is_active);
-  const dev = phoneDev || activeDev || devs[0];
-  debugLog('Phone device: ' + (phoneDev ? phoneDev.name : 'none'));
+  // Use saved preferred device if set, otherwise auto-pick phone
+  const preferredId = sessionStorage.getItem('preferred_device_id');
+  let dev = preferredId ? devs.find(d => d.id === preferredId) : null;
+  if (!dev) {
+    const phoneDev = devs.find(d => /smartphone|phone|iphone|android/i.test(d.type));
+    dev = phoneDev || devs.find(d => d.is_active) || devs[0];
+  }
+  debugLog('Using device: ' + dev.name + ' (' + dev.type + ')');
 
   debugLog('Using device: ' + dev.name + ' (' + dev.type + ')');
 
@@ -1320,6 +1323,105 @@ function debugLog(msg) {
   panel.appendChild(line);
   panel.scrollTop = panel.scrollHeight;
   panel.style.display = 'block';
+}
+
+async function showDevicePicker() {
+  if (!spotifyToken) { showToast('Connect Spotify first!', 'error'); return; }
+  const r = await fetch('https://api.spotify.com/v1/me/player/devices', {
+    headers: { 'Authorization': 'Bearer ' + spotifyToken }
+  });
+  const data = await r.json();
+  const devs = data.devices || [];
+  if (!devs.length) { showToast('No Spotify devices found — open Spotify on your phone!', 'error'); return; }
+
+  // Build a simple picker
+  const current = sessionStorage.getItem('preferred_device_id');
+  const opts = devs.map(d => {
+    const icon = /smartphone|phone|iphone|android/i.test(d.type) ? '📱' : /tv|speaker|cast/i.test(d.type) ? '📺' : '💻';
+    const isSaved = d.id === current;
+    return '<button onclick="pickDevice('' + d.id + '','' + d.name.replace(/'/g,'') + '')" style="display:block;width:100%;background:' + (isSaved ? 'rgba(30,215,96,0.15)' : 'var(--card2)') + ';border:1px solid ' + (isSaved ? 'var(--green)' : 'var(--border)') + ';border-radius:8px;padding:10px 14px;margin-bottom:8px;color:var(--chalk);font-family:Outfit,sans-serif;font-size:13px;cursor:pointer;text-align:left;">'
+      + icon + ' ' + d.name + ' <span style="color:var(--muted);font-size:11px;">(' + d.type + (d.is_active ? ', active' : '') + ')</span>'
+      + (isSaved ? ' <span style="color:var(--green);font-size:11px;float:right;">✓ Selected</span>' : '')
+      + '</button>';
+  }).join('');
+
+  document.getElementById('modalTitle').textContent = 'SELECT PLAYBACK DEVICE';
+  document.getElementById('modalSub').textContent = 'Choose which device Spotify plays music on';
+  document.getElementById('modalScript').style.display = 'none';
+  document.querySelector('.modal-regen').style.display = 'none';
+  document.querySelector('.modal-actions').innerHTML = '<button class="modal-btn modal-btn-secondary" onclick="closeDevicePicker()">Close</button>';
+  document.getElementById('modalScript').insertAdjacentHTML('beforebegin', '<div id="deviceList">' + opts + '</div>');
+  document.getElementById('scriptModal').classList.add('show');
+}
+
+function pickDevice(id, name) {
+  sessionStorage.setItem('preferred_device_id', id);
+  showToast('Playing on: ' + name, 'success');
+  closeDevicePicker();
+}
+
+function closeDevicePicker() {
+  document.getElementById('scriptModal').classList.remove('show');
+  // Restore modal to script editor state
+  const dl = document.getElementById('deviceList');
+  if (dl) dl.remove();
+  document.getElementById('modalScript').style.display = '';
+  document.querySelector('.modal-regen').style.display = '';
+  document.querySelector('.modal-actions').innerHTML = '<button class="modal-btn modal-btn-secondary" onclick="closeScriptModal()">Cancel</button><button class="modal-btn modal-btn-primary" onclick="saveScript()">✓ Save & Use This</button>';
+}
+
+async function pickDevice() {
+  if (!spotifyToken) { showToast('Connect Spotify first!', 'error'); return; }
+  try {
+    const r = await fetch('https://api.spotify.com/v1/me/player/devices', {
+      headers: { 'Authorization': `Bearer ${spotifyToken}` }
+    });
+    const data = await r.json();
+    const devs = data.devices || [];
+    if (!devs.length) { showToast('No Spotify devices found — open Spotify on your phone!', 'error'); return; }
+
+    // Build picker
+    const existing = document.getElementById('devicePicker');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'devicePicker';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:200;display:flex;align-items:flex-end;justify-content:center;';
+    modal.innerHTML = `
+      <div style="background:var(--card);border:1px solid var(--border-accent);border-radius:20px 20px 0 0;padding:24px 20px 40px;width:100%;max-width:600px;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;margin-bottom:4px;">SELECT PLAYBACK DEVICE</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:16px;">Choose where Spotify plays the walk-up music</div>
+        ${devs.map(d => `
+          <button onclick="setDevice('${d.id}','${esc(d.name)}')" style="
+            width:100%;display:flex;align-items:center;gap:12px;background:${sessionStorage.getItem('wu_device')===d.id?'rgba(30,215,96,0.1)':'var(--card2)'};
+            border:1px solid ${sessionStorage.getItem('wu_device')===d.id?'var(--border-accent)':'var(--border)'};
+            border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;text-align:left;
+            font-family:'Outfit',sans-serif;color:var(--chalk);">
+            <div style="font-size:22px">${d.type==='Smartphone'?'📱':d.type==='Computer'?'💻':d.type==='TV'?'📺':'🔊'}</div>
+            <div>
+              <div style="font-weight:600;font-size:14px">${esc(d.name)}</div>
+              <div style="font-size:11px;color:var(--muted)">${d.type}${d.is_active?' · Active':''}</div>
+            </div>
+            ${sessionStorage.getItem('wu_device')===d.id?'<div style="margin-left:auto;color:var(--green);font-size:18px">✓</div>':''}
+          </button>
+        `).join('')}
+        <button onclick="document.getElementById('devicePicker').remove()" style="
+          width:100%;padding:12px;background:none;border:1px solid var(--border);border-radius:10px;
+          color:var(--muted);font-family:'Outfit',sans-serif;font-size:14px;cursor:pointer;margin-top:4px;">
+          Cancel
+        </button>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  } catch(e) {
+    showToast('Could not load devices', 'error');
+  }
+}
+
+function setDevice(id, name) {
+  sessionStorage.setItem('wu_device', id);
+  document.getElementById('devicePicker')?.remove();
+  showToast('Playing on: ' + name, 'success');
 }
 
 function stopAll() {
