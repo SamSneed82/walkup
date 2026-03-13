@@ -1580,8 +1580,55 @@ if (clientId && clientId.length > 10) prepareConnect();
 document.getElementById('clientIdInput').addEventListener('input', () => {
   clientId = document.getElementById('clientIdInput').value;
   save();
-  // Pre-generate PKCE challenge so connect button works instantly on iOS
   if (clientId.length > 10) prepareConnect();
+});
+
+// ── Central data-action dispatcher ───────────────────────────────────────
+function handleAction(el) {
+  const action = el.dataset.action;
+  if (!action) return;
+  const id    = el.dataset.id  !== undefined ? parseInt(el.dataset.id)  : undefined;
+  const idx   = el.dataset.idx !== undefined ? parseInt(el.dataset.idx) : undefined;
+  const devId   = el.dataset.devid;
+  const devName = el.dataset.devname;
+  const map = {
+    connectSpotify,  disconnectSpotify,
+    addPlayer,       startGame,         goBack,
+    triggerWalkup,   nextBatter,        precacheVoiceovers,
+    toggleOrderAdd,  regenScript,       saveScript,
+    showDevicePicker,closeDevicePicker,
+  };
+  if (map[action]) { map[action](); return; }
+  if (action === 'addToOrder'      && id  !== undefined) { addToOrder(id); return; }
+  if (action === 'removePlayer'    && id  !== undefined) { removePlayer(id); return; }
+  if (action === 'clearSong'       && id  !== undefined) { clearSong(id); return; }
+  if (action === 'togglePhonetic'  && id  !== undefined) { togglePhonetic(id); return; }
+  if (action === 'openScriptModal' && id  !== undefined) { openScriptModal(id); return; }
+  if (action === 'removeOrderItem' && idx !== undefined) { removeOrderItem(idx); return; }
+  if (action === 'moveOrderUp'     && idx !== undefined) { moveOrderItem(idx, -1); return; }
+  if (action === 'moveOrderDown'   && idx !== undefined) { moveOrderItem(idx,  1); return; }
+  if (action === 'pickDevice'      && devId) { pickDevice(devId, devName); return; }
+  if (action === 'closeScriptModal' || action === 'closeModalOverlay') { closeScriptModal(); return; }
+}
+
+document.addEventListener('click', function(e) {
+  const el = e.target.closest('[data-action]');
+  if (el) { e.preventDefault(); e.stopPropagation(); handleAction(el); }
+});
+document.addEventListener('touchend', function(e) {
+  const el = e.target.closest('[data-action]');
+  if (!el) return;
+  e.preventDefault(); e.stopPropagation();
+  handleAction(el);
+}, { passive: false });
+
+// Voice chip handler
+document.addEventListener('click', function(e) {
+  const chip = e.target.closest('.voice-chip');
+  if (!chip) return;
+  style = chip.dataset.style;
+  syncStyleChips();
+  save();
 });
 </script>
 </body>
