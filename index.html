@@ -420,7 +420,12 @@ html, body { background: var(--bg); color: var(--chalk); font-family: 'Outfit', 
       <div class="play-status" id="playStatus">Ready</div>
     </div>
 
-    <div class="roster-label">BATTING ORDER — TAP TO SELECT</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+  <div class="roster-label" style="margin-bottom:0">BATTING ORDER — TAP TO SELECT</div>
+  <button onclick="precacheVoiceovers()" style="background:rgba(30,215,96,0.1);border:1px solid rgba(30,215,96,0.3);color:var(--green);font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;border-radius:8px;padding:6px 12px;cursor:pointer;">
+    ⚡ Pre-load Voices
+  </button>
+</div>
     <div id="gameRoster"></div>
   </div>
 </div>
@@ -866,29 +871,93 @@ function buildScript(phrase, num, name, s) {
   return opts[Math.floor(Math.random() * opts.length)];
 }
 
-function speak(text, s) {
+// ElevenLabs voice cache: key = text, value = blob URL
+const voiceCache = {};
+
+// Charlie - energetic sports announcer voice
+const ELEVEN_VOICE_ID = 'IKne3meq5aSn9XLyUdCD';
+const ELEVEN_API_KEY = 'sk_a64ce304e3d5144d74b64a89985c04f1b647dd8fb56f268b';
+
+async function speak(text, s) {
+  // Return cached audio if available
+  if (voiceCache[text]) {
+    return playAudioUrl(voiceCache[text]);
+  }
+
+  try {
+    const stability = s === 'hype' ? 0.35 : s === 'fun' ? 0.4 : 0.5;
+    const similarity = 0.85;
+    const style = s === 'hype' ? 0.8 : s === 'fun' ? 0.7 : 0.5;
+
+    const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${ELEVEN_VOICE_ID}`, {
+      method: 'POST',
+      headers: {
+        'xi-api-key': ELEVEN_API_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        text: text,
+        model_id: 'eleven_turbo_v2',
+        voice_settings: {
+          stability: stability,
+          similarity_boost: similarity,
+          style: style,
+          use_speaker_boost: true
+        }
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail?.message || 'ElevenLabs error');
+    }
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    voiceCache[text] = url; // cache it
+    return playAudioUrl(url);
+
+  } catch(e) {
+    console.error('ElevenLabs TTS failed:', e);
+    // Fallback to browser TTS if ElevenLabs fails
+    return browserSpeak(text);
+  }
+}
+
+function playAudioUrl(url) {
+  return new Promise(resolve => {
+    const audio = new Audio(url);
+    audio.volume = 1;
+    audio.onended = resolve;
+    audio.onerror = resolve;
+    audio.play().catch(resolve);
+  });
+}
+
+function browserSpeak(text) {
   return new Promise(resolve => {
     if (!window.speechSynthesis) { resolve(); return; }
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
-    const cfg = { hype:{rate:1.05,pitch:1.15}, classic:{rate:0.9,pitch:1.0}, fun:{rate:1.1,pitch:1.3} };
-    const c = cfg[s] || cfg.classic;
-    u.rate = c.rate; u.pitch = c.pitch; u.volume = 1;
-    const voices = speechSynthesis.getVoices();
-    const v = voices.find(v => v.lang.startsWith('en-US') && /daniel|alex|fred|david|mark|tom|oliver/i.test(v.name))
-           || voices.find(v => v.lang.startsWith('en-US'))
-           || voices.find(v => v.lang.startsWith('en'))
-           || voices[0];
-    if (v) u.voice = v;
+    u.rate = 1.05; u.pitch = 1.1; u.volume = 1;
     u.onend = u.onerror = () => resolve();
-    if (!voices.length) {
-      speechSynthesis.onvoiceschanged = () => {
-        const v2 = speechSynthesis.getVoices();
-        u.voice = v2.find(v => v.lang.startsWith('en-US')) || v2[0];
-        speechSynthesis.speak(u);
-      };
-    } else { speechSynthesis.speak(u); }
+    speechSynthesis.speak(u);
   });
+}
+
+// Pre-cache all player voiceovers so game day is instant
+async function precacheVoiceovers() {
+  const phrase = document.getElementById('announcePhrase').value || 'Now batting';
+  for (const p of players) {
+    if (!p.name || !p.number) continue;
+    const spokenName = (p.usePhonetic && p.phonetic) ? p.phonetic : p.name;
+    // Cache all 3 possible scripts per style
+    const script = buildScript(phrase, p.number, spokenName, style);
+    if (!voiceCache[script]) {
+      await speak(script, style);
+    }
+  }
+  showToast('All voiceovers ready! ✓', 'success');
 }
 
 async function playOnSpotify(uri, seekSec) {
