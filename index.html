@@ -875,7 +875,7 @@ function buildScript(phrase, num, name, s) {
 const voiceCache = {};
 
 // Charlie - energetic sports announcer voice
-const ELEVEN_VOICE_ID = 'IKne3meq5aSn9XLyUdCD';
+const ELEVEN_VOICE_ID = 'pqHfZKP75CvOlQylNhV4'; // Bill - strong American male
 const ELEVEN_API_KEY = 'sk_a64ce304e3d5144d74b64a89985c04f1b647dd8fb56f268b';
 
 async function speak(text, s) {
@@ -963,15 +963,34 @@ async function precacheVoiceovers() {
 async function playOnSpotify(uri, seekSec) {
   if (!spotifyToken) throw new Error('Not connected to Spotify');
 
+  // Step 1: get devices
   const devR = await fetch('https://api.spotify.com/v1/me/player/devices', {
     headers: { 'Authorization': `Bearer ${spotifyToken}` }
   });
+
+  if (devR.status === 401) { spotifyToken = null; sessionStorage.removeItem('wu_tok'); throw new Error('Spotify session expired — reconnect'); }
+
   const devD = await devR.json();
   const devs = devD.devices || [];
+
+  if (!devs.length) {
+    throw new Error('No Spotify device found — open the Spotify app on your phone first, then tap ▶ again!');
+  }
+
   const dev = devs.find(d => d.is_active) || devs[0];
 
-  if (!dev) throw new Error('No Spotify device found — open Spotify on your phone first, then try again!');
+  // Step 2: If no active device, transfer playback to the found device first
+  if (!devs.find(d => d.is_active)) {
+    await fetch('https://api.spotify.com/v1/me/player', {
+      method: 'PUT',
+      headers: { 'Authorization': `Bearer ${spotifyToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ device_ids: [dev.id], play: false })
+    });
+    // Small delay to let transfer complete
+    await new Promise(r => setTimeout(r, 800));
+  }
 
+  // Step 3: Play the track
   const r = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${dev.id}`, {
     method: 'PUT',
     headers: { 'Authorization': `Bearer ${spotifyToken}`, 'Content-Type': 'application/json' },
@@ -981,6 +1000,11 @@ async function playOnSpotify(uri, seekSec) {
   if (r.status === 401) { spotifyToken = null; sessionStorage.removeItem('wu_tok'); throw new Error('Spotify session expired — reconnect'); }
   if (r.status === 403) throw new Error('Spotify Premium required for playback control');
   if (r.status === 404) throw new Error('No active Spotify device — open Spotify on your phone first!');
+  if (r.status === 204) return; // success, no content expected
+  if (!r.ok) {
+    const body = await r.json().catch(() => ({}));
+    throw new Error(body?.error?.message || `Spotify error ${r.status}`);
+  }
 }
 
 function stopAll() {
