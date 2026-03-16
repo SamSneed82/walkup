@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body { font-family: sans-serif; padding: 20px; background: #111; color: #fff; }
+button { display: block; width: 100%; padding: 20px; margin: 10px 0; font-size: 18px; border-radius: 10px; border: none; background: #1ed760; color: #000; font-weight: bold; }
+#log { background: #222; border-radius: 8px; padding: 14px; margin-top: 20px; font-size: 13px; min-height: 60px; }
+</style>
+</head>
+<body>
+<h2>Touch Test</h2>
+
+<!-- Test 1: plain onclick -->
+<button onclick="log('onclick fired')">Test 1: onclick</button>
+
+<!-- Test 2: data-action -->
+<button data-action="test2">Test 2: data-action</button>
+
+<!-- Test 3: addEventListener -->
+<button id="btn3">Test 3: addEventListener</button>
+
+<div id="log">Tap a button...</div>
+
+<script>
+function log(msg) {
+  document.getElementById('log').innerHTML += '<div>' + new Date().toLocaleTimeString() + ': ' + msg + '</div>';
+}
+
+// data-action dispatcher
+document.addEventListener('click', function(e) {
+  const el = e.target.closest('[data-action]');
+  if (el) log('data-action dispatcher fired: ' + el.dataset.action);
+});
+
+// addEventListener
+document.getElementById('btn3').addEventListener('click', function() {
+  log('addEventListener click fired');
+});
+</script>
+</body>
+</html>
