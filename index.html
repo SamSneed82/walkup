@@ -1369,37 +1369,11 @@ async function precacheVoiceovers() {
 }
 
 function openSpotifyTrack(uri, seekSec) {
-  // Convert spotify:track:ID to a deep link that opens Spotify directly
-  // This bypasses iOS background audio restrictions entirely
   const trackId = uri.replace('spotify:track:', '');
-  
-  // Try Spotify app deep link first (opens app directly)
-  const spotifyAppLink = `spotify://track/${trackId}`;
-  
-  // Fallback: open.spotify.com web link (opens in Spotify app if installed)
-  const spotifyWebLink = `https://open.spotify.com/track/${trackId}`;
-  
-  // Use a hidden iframe trick to try the app link without leaving the page
-  // If Spotify is installed (it is, since they have Premium), it will open
-  const iframe = document.createElement('iframe');
-  iframe.style.display = 'none';
-  document.body.appendChild(iframe);
-  
-  // Set a timeout — if app link doesn't work in 500ms, open web link
-  const fallbackTimer = setTimeout(() => {
-    window.open(spotifyWebLink, '_blank');
-    iframe.remove();
-  }, 500);
-  
-  iframe.onload = () => {
-    clearTimeout(fallbackTimer);
-    iframe.remove();
-  };
-  
-  // Try app deep link
-  window.location.href = spotifyAppLink;
-  
-  debugLog('Spotify deep link fired: ' + spotifyAppLink);
+  // This format tells Spotify to open AND play the track immediately
+  const deepLink = `spotify://track/${trackId}?action=play`;
+  window.location.href = deepLink;
+  debugLog('Spotify deep link: ' + deepLink);
 }
 
 async function playOnSpotify(uri, seekSec) {
