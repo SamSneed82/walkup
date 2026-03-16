@@ -615,8 +615,10 @@ let players = [], idCtr = 0, style = 'hype';
 let spotifyToken = null, clientId = '';
 let currentPlayer = null, playing = false;
 let searchTimers = {};
-let battingOrder = [];       // array of player ids in order
-let currentBatterIndex = -1; // which spot in order we're on
+let battingOrder = [];
+let currentBatterIndex = -1;
+let toastT;
+let editingPlayerId = null;
 
 // Set redirect URI display
 const REDIRECT_URI = "https://samsneed82.github.io/walkup/";
@@ -1012,7 +1014,6 @@ function renderBattingOrder() {
 
 function toggleOrderAdd() {
   try {
-  alert('toggleOrderAdd fired! players='+players.length);
   const res = document.getElementById('orderAddResults');
   if (res.style.display === 'block') { res.style.display = 'none'; return; }
   const available = players.filter(p => p.name && p.number);
@@ -1059,7 +1060,6 @@ document.addEventListener('click', e => {
 });
 
 // ── Script Editor ─────────────────────────────
-let editingPlayerId = null;
 
 function openScriptModal(playerId) {
   editingPlayerId = playerId;
@@ -1535,7 +1535,6 @@ function save() {
   } catch(e) {}
 }
 
-let toastT;
 function showToast(msg, type='') {
   const el = document.getElementById('toast');
   el.textContent = msg; el.className = `toast ${type} show`;
