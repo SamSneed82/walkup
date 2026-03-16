@@ -813,12 +813,15 @@ function syncStyleChips() {
 
 // ── Players ──────────────────────────────────
 function addPlayer() {
-  players.push({ id: ++idCtr, number:'', name:'', phonetic:'', usePhonetic:false, trackUri:'', trackName:'', trackArtist:'', trackImg:'', seekSec:0, customScript:'' });
-  try { renderPlayers(); } catch(e) { 
+  try {
+    players.push({ id: ++idCtr, number:'', name:'', phonetic:'', usePhonetic:false, trackUri:'', trackName:'', trackArtist:'', trackImg:'', seekSec:0, customScript:'' });
+    renderPlayers();
+    save();
+  } catch(e) {
     const b = document.getElementById('errBanner');
-    if(b){ b.style.display='block'; b.textContent='renderPlayers error: '+e.message; }
+    if(b){ b.style.display='block'; b.textContent='addPlayer ERROR: '+e.message+' line:'+e.stack; }
+    alert('addPlayer error: ' + e.message);
   }
-  save();
 }
 
 function removePlayer(id) {
@@ -1009,6 +1012,7 @@ function renderBattingOrder() {
 
 function toggleOrderAdd() {
   try {
+  alert('toggleOrderAdd fired! players='+players.length);
   const res = document.getElementById('orderAddResults');
   if (res.style.display === 'block') { res.style.display = 'none'; return; }
   const available = players.filter(p => p.name && p.number);
@@ -1104,13 +1108,19 @@ function getRandomStyle() {
 
 // ── Game Screen ──────────────────────────────
 function startGame() {
-  if (!players.length) { showToast('Add at least one player!', 'error'); return; }
-  if (players.some(p => !p.name || !p.number)) { showToast('Fill name & number for all players', 'error'); return; }
-  save();
-  currentBatterIndex = -1;
-  document.getElementById('gameTeamName').textContent = (document.getElementById('teamName').value || 'GAME DAY').toUpperCase();
-  renderGameRoster();
-  showScreen('gameScreen');
+  try {
+    if (!players.length) { showToast('Add at least one player!', 'error'); return; }
+    if (players.some(p => !p.name || !p.number)) { showToast('Fill name & number for all players', 'error'); return; }
+    save();
+    currentBatterIndex = -1;
+    document.getElementById('gameTeamName').textContent = (document.getElementById('teamName').value || 'GAME DAY').toUpperCase();
+    renderGameRoster();
+    showScreen('gameScreen');
+  } catch(e) {
+    const b = document.getElementById('errBanner');
+    if(b){ b.style.display='block'; b.textContent='startGame ERROR: '+e.message; }
+    alert('startGame error: ' + e.message);
+  }
 }
 
 function goBack() {
