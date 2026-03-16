@@ -1543,12 +1543,9 @@ function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').re
 
 document.getElementById('teamName').addEventListener('input', save);
 document.getElementById('announcePhrase').addEventListener('input', save);
-// Pre-generate PKCE on load if client ID already saved
-if (clientId && clientId.length > 10) prepareConnect();
 document.getElementById('clientIdInput').addEventListener('input', () => {
   clientId = document.getElementById('clientIdInput').value;
   save();
-  if (clientId.length > 10) prepareConnect();
 });
 
 // ── Central data-action dispatcher ───────────────────────────────────────
