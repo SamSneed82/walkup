@@ -551,6 +551,9 @@ window.addEventListener('unhandledrejection', function(e) {
     <!-- Now Playing Card -->
     <div class="np-card">
       <div class="np-badge">⚾ &nbsp; TAP A PLAYER BELOW TO SELECT</div>
+      <div id="deviceWarning" style="background:rgba(240,192,64,0.12);border:1px solid rgba(240,192,64,0.3);border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:11px;color:#f0c040;display:none;">
+        ⚠ Music playing on wrong device? Tap <strong>📱 Pick Device</strong> below to choose your phone.
+      </div>
       <div id="npAlbum" class="np-album-ph">⚾</div>
       <div class="np-num" id="npNum">—</div>
       <div class="np-name" id="npName">SELECT A PLAYER</div>
@@ -1387,16 +1390,18 @@ async function playOnSpotify(uri, seekSec) {
     throw new Error('❌ No Spotify device found. Open the Spotify app on your phone, play any song briefly, then try again.');
   }
 
-  // Use saved preferred device if set, otherwise auto-pick phone
-  const preferredId = sessionStorage.getItem('preferred_device_id');
+  // Use saved preferred device if set
+  const preferredId = sessionStorage.getItem('wu_preferred_device');
   let dev = preferredId ? devs.find(d => d.id === preferredId) : null;
-  if (!dev) {
-    const phoneDev = devs.find(d => /smartphone|phone|iphone|android/i.test(d.type));
-    dev = phoneDev || devs.find(d => d.is_active) || devs[0];
-  }
-  debugLog('Using device: ' + dev.name + ' (' + dev.type + ')');
 
-  debugLog('Using device: ' + dev.name + ' (' + dev.type + ')');
+  // If no saved preference or saved device not found, pick best available
+  if (!dev) {
+    // Prefer active device first (user just played something)
+    dev = devs.find(d => d.is_active)
+       || devs.find(d => /smartphone|phone|iphone|android/i.test(d.type))
+       || devs[0];
+  }
+  debugLog('Using device: ' + dev.name + ' (' + dev.type + ') preferred:' + (preferredId ? 'yes' : 'no'));
 
   // Step 2: Transfer playback to device if not active
   if (!dev.is_active) {
@@ -1437,6 +1442,11 @@ async function playOnSpotify(uri, seekSec) {
   }
   if (r.status === 204 || r.ok) {
     debugLog('✓ Play command accepted!');
+    // Show device tip if not using a phone
+    const w = document.getElementById('deviceWarning');
+    if (w && !/smartphone|phone|iphone|android/i.test(dev.type)) {
+      w.style.display = 'block';
+    }
     return;
   }
   const errBody = await r.json().catch(() => ({}));
@@ -1467,7 +1477,7 @@ async function showDevicePicker() {
   if (!devs.length) { showToast('No Spotify devices found — open Spotify on your phone!', 'error'); return; }
 
   // Build a simple picker
-  const current = sessionStorage.getItem('preferred_device_id');
+  const current = sessionStorage.getItem('wu_preferred_device');
   const opts = devs.map(d => {
     const icon = /smartphone|phone|iphone|android/i.test(d.type) ? '📱' : /tv|speaker|cast/i.test(d.type) ? '📺' : '💻';
     const isSaved = d.id === current;
@@ -1490,7 +1500,7 @@ async function showDevicePicker() {
 }
 
 function pickDevice(id, name) {
-  sessionStorage.setItem('preferred_device_id', id);
+  sessionStorage.setItem('wu_preferred_device', id);
   showToast('Playing on: ' + name, 'success');
   closeDevicePicker();
 }
