@@ -1496,8 +1496,6 @@ function closeDevicePicker() {
   document.querySelector('.modal-actions').innerHTML = '<button class="modal-btn modal-btn-secondary" data-action="closeScriptModal">Cancel</button><button class="modal-btn modal-btn-primary" data-action="saveScript">✓ Save & Use This</button>';
 }
 
-async 
-
 function setDevice(id, name) {
   sessionStorage.setItem('wu_device', id);
   document.getElementById('devicePicker')?.remove();
