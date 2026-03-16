@@ -557,7 +557,7 @@ window.addEventListener('unhandledrejection', function(e) {
       <div class="np-song" id="npSong">Choose from the roster below</div>
       <button class="play-btn" id="mainPlayBtn" data-action="triggerWalkup">▶</button>
       <div class="play-status" id="playStatus">Ready</div>
-      <div id="debugPanel" style="display:none;background:rgba(0,0,0,0.4);border-radius:8px;padding:8px 10px;margin-top:10px;max-height:80px;overflow-y:auto;text-align:left;width:100%;"></div>
+      <div id="debugPanel" style="display:block;background:rgba(0,0,0,0.4);border-radius:8px;padding:8px 10px;margin-top:10px;max-height:120px;overflow-y:auto;text-align:left;width:100%;font-size:10px;color:#6b7a8d;">Debug ready...</div>
     </div>
 
     <button class="next-batter-btn" data-action="nextBatter" id="nextBatterBtn">
@@ -1217,6 +1217,9 @@ async function triggerWalkup() {
   const btn = document.getElementById('mainPlayBtn');
   btn.className = 'play-btn playing';
   btn.textContent = '■';
+  // Clear debug panel for fresh log
+  const dp = document.getElementById('debugPanel');
+  if (dp) dp.innerHTML = '';
 
   try {
     const phrase = document.getElementById('announcePhrase').value || 'Now batting';
@@ -1225,20 +1228,26 @@ async function triggerWalkup() {
     const script = currentPlayer.customScript || buildScript(phrase, currentPlayer.number, spokenName, getRandomStyle());
 
     setStatus('📢 Announcing...', true);
+    debugLog('Speaking: ' + script);
     await speak(script, style);
-    if (!playing) return;
+    debugLog('Speak done. playing=' + playing + ' trackUri=' + (currentPlayer.trackUri ? 'yes' : 'no'));
 
+    // Don't check playing flag here - speech ending can reset it on some browsers
     if (currentPlayer.trackUri) {
+      playing = true; // ensure still set
+      btn.className = 'play-btn playing';
+      btn.textContent = '■';
       setStatus('🎵 Starting music on Spotify...', true);
       await playOnSpotify(currentPlayer.trackUri, currentPlayer.seekSec || 0);
       setStatus('🎵 Walk-up music playing! Tap ■ to stop.', true);
     } else {
-      setStatus('Done! (No song selected)', false);
+      setStatus('Done! (No song selected for this player)', false);
       playing = false;
       btn.className = 'play-btn';
       btn.textContent = '▶';
     }
   } catch(err) {
+    debugLog('ERROR: ' + err.message);
     showToast(err.message || 'Something went wrong', 'error');
     stopAll();
   }
