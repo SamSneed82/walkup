@@ -813,8 +813,12 @@ function syncStyleChips() {
 
 // ── Players ──────────────────────────────────
 function addPlayer() {
-  players.push({ id: ++idCtr, number:'', name:'', phonetic:'', usePhonetic:false, trackUri:'', trackName:'', trackArtist:'', trackImg:'', seekSec:0 });
-  renderPlayers(); save();
+  players.push({ id: ++idCtr, number:'', name:'', phonetic:'', usePhonetic:false, trackUri:'', trackName:'', trackArtist:'', trackImg:'', seekSec:0, customScript:'' });
+  try { renderPlayers(); } catch(e) { 
+    const b = document.getElementById('errBanner');
+    if(b){ b.style.display='block'; b.textContent='renderPlayers error: '+e.message; }
+  }
+  save();
 }
 
 function removePlayer(id) {
@@ -1004,11 +1008,11 @@ function renderBattingOrder() {
 }
 
 function toggleOrderAdd() {
+  try {
   const res = document.getElementById('orderAddResults');
   if (res.style.display === 'block') { res.style.display = 'none'; return; }
-  // Show players not yet in order
   const available = players.filter(p => p.name && p.number);
-  if (!available.length) { showToast('Add players to the roster first!', 'error'); return; }
+  if (!available.length) { showToast('Add players with name & number first!', 'error'); return; }
   res.innerHTML = available.map(p => `
     <button class="order-add-opt" data-action="addToOrder" data-id="${p.id}">
       <div class="oao-num">${p.number}</div>
@@ -1019,6 +1023,10 @@ function toggleOrderAdd() {
     </button>
   `).join('');
   res.style.display = 'block';
+  } catch(e) {
+    const b = document.getElementById('errBanner');
+    if(b){ b.style.display='block'; b.textContent='toggleOrderAdd error: '+e.message; }
+  }
 }
 
 function addToOrder(pid) {
@@ -1098,7 +1106,6 @@ function getRandomStyle() {
 function startGame() {
   if (!players.length) { showToast('Add at least one player!', 'error'); return; }
   if (players.some(p => !p.name || !p.number)) { showToast('Fill name & number for all players', 'error'); return; }
-  if (!spotifyToken) { showToast('Connect Spotify first!', 'error'); return; }
   save();
   currentBatterIndex = -1;
   document.getElementById('gameTeamName').textContent = (document.getElementById('teamName').value || 'GAME DAY').toUpperCase();
