@@ -1237,12 +1237,13 @@ async function triggerWalkup() {
 
     // Don't check playing flag here - speech ending can reset it on some browsers
     if (currentPlayer.trackUri) {
-      playing = true; // ensure still set
-      btn.className = 'play-btn playing';
-      btn.textContent = '■';
-      setStatus('🎵 Starting music on Spotify...', true);
-      await playOnSpotify(currentPlayer.trackUri, currentPlayer.seekSec || 0);
-      setStatus('🎵 Walk-up music playing! Tap ■ to stop.', true);
+      setStatus('🎵 Opening Spotify...', true);
+      debugLog('Opening Spotify deep link for: ' + currentPlayer.trackUri);
+      openSpotifyTrack(currentPlayer.trackUri, currentPlayer.seekSec || 0);
+      setStatus('🎵 Spotify opened! Music playing ▶', true);
+      playing = false;
+      btn.className = 'play-btn';
+      btn.textContent = '▶';
     } else {
       setStatus('Done! (No song selected for this player)', false);
       playing = false;
@@ -1365,6 +1366,40 @@ async function precacheVoiceovers() {
     }
   }
   showToast('All voiceovers ready! ✓', 'success');
+}
+
+function openSpotifyTrack(uri, seekSec) {
+  // Convert spotify:track:ID to a deep link that opens Spotify directly
+  // This bypasses iOS background audio restrictions entirely
+  const trackId = uri.replace('spotify:track:', '');
+  
+  // Try Spotify app deep link first (opens app directly)
+  const spotifyAppLink = `spotify://track/${trackId}`;
+  
+  // Fallback: open.spotify.com web link (opens in Spotify app if installed)
+  const spotifyWebLink = `https://open.spotify.com/track/${trackId}`;
+  
+  // Use a hidden iframe trick to try the app link without leaving the page
+  // If Spotify is installed (it is, since they have Premium), it will open
+  const iframe = document.createElement('iframe');
+  iframe.style.display = 'none';
+  document.body.appendChild(iframe);
+  
+  // Set a timeout — if app link doesn't work in 500ms, open web link
+  const fallbackTimer = setTimeout(() => {
+    window.open(spotifyWebLink, '_blank');
+    iframe.remove();
+  }, 500);
+  
+  iframe.onload = () => {
+    clearTimeout(fallbackTimer);
+    iframe.remove();
+  };
+  
+  // Try app deep link
+  window.location.href = spotifyAppLink;
+  
+  debugLog('Spotify deep link fired: ' + spotifyAppLink);
 }
 
 async function playOnSpotify(uri, seekSec) {
